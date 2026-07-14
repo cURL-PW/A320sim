@@ -1,0 +1,117 @@
+/* A320 MCDU window */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  background: #23272c;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#cdu-unit {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 8px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#cdu-top { display: flex; gap: 4px; }
+.lsk-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 34px 0 26px;
+}
+.cdu-key.lsk {
+  width: 34px;
+  height: 30px;
+  font-size: 13px;
+  color: #cdd6de;
+}
+
+#cdu-screenwrap {
+  position: relative;
+  flex: 1;
+  background: #000;
+  border: 3px solid #10331a;
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-height: 330px;
+}
+#cdu-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+}
+.cdu-line {
+  display: flex;
+  height: 23px;
+  align-items: baseline;
+  white-space: pre;
+}
+.cdu-l { flex: 1; text-align: left; }
+.cdu-c { flex: 1.4; text-align: center; }
+.cdu-r { flex: 1; text-align: right; }
+.cdu-title, .cdu-data, .cdu-scratch { font-size: 16px; }
+.cdu-label { font-size: 11px; }
+.cdu-scratch { border-top: 1px solid #163a20; margin-top: auto; padding-top: 3px; }
+
+.col-w { color: #e8eef2; }
+.col-g { color: #35e08a; }
+.col-a { color: #ffb000; }
+.col-c-col { color: #00e5ff; }
+.col-label { color: #e8eef2cc; }
+
+#cdu-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  background: #000000e0;
+  color: #ffb000;
+  font-size: 15px;
+  padding: 12px;
+}
+#cdu-overlay .hint { color: #93a0ac; font-size: 12px; line-height: 1.6; }
+
+#cdu-pagekeys {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.cdu-key.page { font-size: 10px; height: 40px; padding: 2px; }
+
+#cdu-numkeys {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+
+#cdu-keys {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.cdu-key {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8eef2;
+  background: #383f46;
+  border: 1px solid #14171b;
+  border-bottom-width: 3px;
+  border-radius: 5px;
+}
+.cdu-key:active { background: #4a545f; border-bottom-width: 1px; }
+.cdu-key.clr { color: #ffb000; }
+.cdu-key.ovfy { color: #00e5ff; }
