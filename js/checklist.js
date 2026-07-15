@@ -4,28 +4,43 @@
 // shutdown items (e.g. BAT OFF) from self-checking at cold & dark.
 import { ENG_MODE } from './model.js';
 
-const allPumps = s => Object.values(s.fuelPumps).every(v => v);
+const wingPumps = s => s.fuelPumps.L1 && s.fuelPumps.L2 && s.fuelPumps.R1 && s.fuelPumps.R2;
+const ctrPumpsOff = s => !s.fuelPumps.C1 && !s.fuelPumps.C2;
 const noPumps = s => Object.values(s.fuelPumps).every(v => !v);
+const packsOn = s => s.pack1 && s.pack2;
+const packsOff = s => !s.pack1 && !s.pack2;
 
 export const PHASES = [
   {
     id: 'prep', title: 'COCKPIT PREPARATION', items: [
+      { id: 'gpu', label: 'GND: GPU (EFB)', action: 'CONNECT', done: s => s.gnd.gpu },
       { id: 'bat', label: 'BAT 1 + 2', action: 'ON', done: s => s.bat1 && s.bat2 },
       { id: 'extpwr', label: 'EXT PWR', action: 'ON', done: s => s.extPwrOn },
       { id: 'adirs', label: 'ADIRS 1+2+3', action: 'NAV', done: s => s.adirs.every(a => a.sel === 'NAV') },
+      { id: 'hyd', label: 'HYD (PUMPS / PTU)', action: 'CHECK', done: s => s.hyd.eng1Pump && s.hyd.ptu && s.hyd.eng2Pump },
+      { id: 'elec-chk', label: 'ELEC (GEN / BUS TIE)', action: 'CHECK', done: s => s.gen1 && s.gen2 && s.apuGenPb && s.busTie },
+      { id: 'fire-chk', label: 'FIRE PANEL', action: 'CHECK', done: () => true },
+      { id: 'antiice', label: 'ANTI ICE', action: 'OFF', done: s => !s.antiIce.wing && !s.antiIce.eng1 && !s.antiIce.eng2 },
+      { id: 'pack-chk', label: 'PACK 1 + 2', action: 'CHECK OFF', done: packsOff },
       { id: 'navlogo', label: 'NAV & LOGO LT', action: 'ON', done: s => s.lights.navLogo },
+      { id: 'strobe', label: 'STROBE', action: 'AUTO', done: s => s.lights.strobe !== 'OFF' },
       { id: 'signs', label: 'SEAT BELTS / NO SMOKING', action: 'ON', done: s => s.signs.seatBelts && s.signs.noSmoking },
       { id: 'cdu-init', label: 'MCDU INIT (FROM/TO)', action: 'ENTER', done: s => !!s.cdu.from },
     ],
   },
   {
     id: 'beforestart', title: 'BEFORE START', items: [
-      { id: 'fuel', label: 'FUEL PUMPS (6)', action: 'ON', done: allPumps },
+      { id: 'fuel', label: 'WING FUEL PUMPS (4)', action: 'ON', done: wingPumps },
+      { id: 'ctr', label: 'CTR TK PUMPS (CTR EMPTY)', action: 'OFF', done: ctrPumpsOff },
       { id: 'apum', label: 'APU MASTER SW', action: 'ON', done: s => s.apuMaster },
       { id: 'apus', label: 'APU START ... AVAIL', action: 'START', done: s => s.apu.state === 'avail' },
       { id: 'apub', label: 'APU BLEED', action: 'ON', done: s => s.apuBleed },
+      { id: 'packs-on1', label: 'PACK 1 + 2', action: 'ON', done: packsOn },
+      { id: 'xpdr-code', label: 'XPDR CODE', action: 'SET 2000', done: s => s.xpdr.code === '2000' },
+      { id: 'xpdr-mode', label: 'XPDR MODE', action: 'STBY', done: s => s.xpdr.mode === 'STBY' },
       { id: 'parkbrk', label: 'PARKING BRAKE', action: 'CHECK ON', done: s => s.parkBrk },
       { id: 'beacon', label: 'BEACON', action: 'ON', done: s => s.lights.beacon },
+      { id: 'packs-off1', label: 'PACK 1 + 2 (FOR START)', action: 'OFF', done: packsOff },
     ],
   },
   {
@@ -40,6 +55,7 @@ export const PHASES = [
     id: 'afterstart', title: 'AFTER START', items: [
       { id: 'apuboff', label: 'APU BLEED', action: 'OFF', done: s => !s.apuBleed },
       { id: 'apumoff', label: 'APU MASTER SW', action: 'OFF', done: s => !s.apuMaster },
+      { id: 'packs-on2', label: 'PACK 1 + 2', action: 'ON', done: packsOn },
       { id: 'extoff', label: 'EXT PWR', action: 'OFF', done: s => !s.extPwrOn },
     ],
   },
@@ -50,6 +66,7 @@ export const PHASES = [
       { id: 'sd-eng', label: 'ENG MASTER 1 + 2', action: 'OFF', done: s => s.eng.every(e => e.state === 'off') && !s.engMaster[0] && !s.engMaster[1] },
       { id: 'sd-beacon', label: 'BEACON', action: 'OFF', done: s => !s.lights.beacon },
       { id: 'sd-belts', label: 'SEAT BELTS', action: 'OFF', done: s => !s.signs.seatBelts },
+      { id: 'sd-packs', label: 'PACK 1 + 2', action: 'OFF', done: packsOff },
       { id: 'sd-fuel', label: 'FUEL PUMPS', action: 'OFF', done: noPumps },
       { id: 'sd-adirs', label: 'ADIRS 1+2+3', action: 'OFF', done: s => s.adirs.every(a => a.sel === 'OFF') },
       { id: 'sd-navlogo', label: 'NAV & LOGO LT', action: 'OFF', done: s => !s.lights.navLogo },

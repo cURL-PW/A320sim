@@ -1,10 +1,19 @@
-// Overhead panel: ELEC / APU / ADIRS / FUEL / AIR COND / EXT LT / SIGNS
-import { korry, rotary, toggle, section } from '../components.js';
-import { IR_MODE } from '../model.js';
+// Overhead panel: GND / ADIRS / ELEC / APU / HYD / FIRE / FUEL / AIR COND /
+// ANTI ICE / EXT LT / SIGNS
+import { korry, rotary, toggle, toggle3, section } from '../components.js';
+import { IR_MODE, STROBE_MODE, CENTER_TANK_EMPTY } from '../model.js';
 
 export function buildOverhead(root, act) {
   const updaters = [];
   const add = (parent, w) => { parent.appendChild(w.el); updaters.push(w); };
+
+  // --- GND SERVICES (EFB stand-in) ---
+  const gnd = section('GND SERVICES (EFB)');
+  add(gnd.body, toggle({
+    label: 'GPU', onText: 'CONN', offText: 'DISC',
+    get: () => act.state().gnd.gpu,
+    set: v => act.do(s => { s.gnd.gpu = v; }),
+  }));
 
   // --- ADIRS ---
   const adirs = section('ADIRS');
@@ -35,9 +44,9 @@ export function buildOverhead(root, act) {
   }));
   add(elec.body, korry({
     label: 'EXT PWR', top: 'AVAIL', bottom: 'ON', topColor: 'green', botColor: 'blue',
-    topLit: s => !s.extPwrOn,          // GPU is always plugged in while parked
+    topLit: s => s.gnd.gpu && !s.extPwrOn,   // AVAIL only once the GPU is connected
     botLit: s => s.extPwrOn,
-    onPress: () => act.do(s => { s.extPwrOn = !s.extPwrOn; }),
+    onPress: () => act.do(s => { if (s.gnd.gpu) s.extPwrOn = !s.extPwrOn; }),
   }));
   add(elec.body, korry({
     label: 'GEN 1', top: 'FAULT', bottom: 'OFF', botColor: 'white',
@@ -56,6 +65,11 @@ export function buildOverhead(root, act) {
     botLit: s => !s.apuGenPb,
     onPress: () => act.do(s => { s.apuGenPb = !s.apuGenPb; }),
   }));
+  add(elec.body, korry({
+    label: 'BUS TIE', top: '', bottom: 'OFF', botColor: 'white',
+    botLit: s => !s.busTie,
+    onPress: () => act.do(s => { s.busTie = !s.busTie; }),
+  }));
 
   // --- APU ---
   const apu = section('APU');
@@ -71,12 +85,44 @@ export function buildOverhead(root, act) {
     onPress: () => act.do(s => { if (s.apuMaster) s.apuStartPb = true; }),
   }));
 
+  // --- HYD (verify-only, normal positions) ---
+  const hyd = section('HYD');
+  add(hyd.body, korry({
+    label: 'ENG 1 PUMP', top: 'FAULT', bottom: 'OFF', botColor: 'white',
+    topLit: (s, d) => s.hyd.eng1Pump && !d.eng1Run,   // low pressure until engine runs
+    botLit: s => !s.hyd.eng1Pump,
+    onPress: () => act.do(s => { s.hyd.eng1Pump = !s.hyd.eng1Pump; }),
+  }));
+  add(hyd.body, korry({
+    label: 'PTU', top: 'FAULT', bottom: 'OFF', botColor: 'white',
+    botLit: s => !s.hyd.ptu,
+    onPress: () => act.do(s => { s.hyd.ptu = !s.hyd.ptu; }),
+  }));
+  add(hyd.body, korry({
+    label: 'ENG 2 PUMP', top: 'FAULT', bottom: 'OFF', botColor: 'white',
+    topLit: (s, d) => s.hyd.eng2Pump && !d.eng2Run,
+    botLit: s => !s.hyd.eng2Pump,
+    onPress: () => act.do(s => { s.hyd.eng2Pump = !s.hyd.eng2Pump; }),
+  }));
+
+  // --- FIRE (verify-only: guarded pushbuttons, normally dark) ---
+  const fire = section('FIRE');
+  for (const label of ['ENG 1', 'APU', 'ENG 2']) {
+    add(fire.body, korry({
+      label, top: 'FIRE', bottom: '', topColor: 'red',
+      onPress: () => {},   // guarded — no action in this trainer
+    }));
+  }
+
   // --- FUEL ---
   const fuel = section('FUEL');
   for (const key of ['L1', 'L2', 'C1', 'C2', 'R1', 'R2']) {
-    const label = key[0] === 'C' ? `CTR ${key[1]}` : `${key[0]} TK ${key[1]}`;
+    const isCtr = key[0] === 'C';
+    const label = isCtr ? `CTR ${key[1]}` : `${key[0]} TK ${key[1]}`;
     add(fuel.body, korry({
       label, top: 'FAULT', bottom: 'OFF', botColor: 'white',
+      // centre pumps on an empty centre tank -> low pressure FAULT
+      topLit: s => isCtr && CENTER_TANK_EMPTY && s.fuelPumps[key],
       botLit: s => !s.fuelPumps[key],
       onPress: () => act.do(s => { s.fuelPumps[key] = !s.fuelPumps[key]; }),
     }));
@@ -110,14 +156,27 @@ export function buildOverhead(root, act) {
     onPress: () => act.do(s => { s.apuBleed = !s.apuBleed; }),
   }));
 
+  // --- ANTI ICE ---
+  const ai = section('ANTI ICE');
+  for (const [key, label] of [['wing', 'WING'], ['eng1', 'ENG 1'], ['eng2', 'ENG 2']]) {
+    add(ai.body, korry({
+      label, top: 'FAULT', bottom: 'ON', botColor: 'blue',
+      botLit: s => s.antiIce[key],
+      onPress: () => act.do(s => { s.antiIce[key] = !s.antiIce[key]; }),
+    }));
+  }
+
   // --- EXT LT ---
   const lt = section('EXT LT');
   add(lt.body, toggle({ label: 'BEACON', get: () => act.state().lights.beacon,
     set: v => act.do(s => { s.lights.beacon = v; }) }));
   add(lt.body, toggle({ label: 'NAV & LOGO', get: () => act.state().lights.navLogo,
     set: v => act.do(s => { s.lights.navLogo = v; }) }));
-  add(lt.body, toggle({ label: 'STROBE', get: () => act.state().lights.strobe,
-    set: v => act.do(s => { s.lights.strobe = v; }) }));
+  add(lt.body, toggle3({
+    label: 'STROBE', positions: STROBE_MODE,
+    get: () => STROBE_MODE.indexOf(act.state().lights.strobe),
+    set: v => act.do(s => { s.lights.strobe = STROBE_MODE[v]; }),
+  }));
   add(lt.body, toggle({ label: 'WING', get: () => act.state().lights.wing,
     set: v => act.do(s => { s.lights.wing = v; }) }));
 
@@ -128,7 +187,7 @@ export function buildOverhead(root, act) {
   add(signs.body, toggle({ label: 'NO SMOKING', get: () => act.state().signs.noSmoking,
     set: v => act.do(s => { s.signs.noSmoking = v; }) }));
 
-  root.append(adirs.el, elec.el, apu.el, fuel.el, air.el, lt.el, signs.el);
+  root.append(gnd.el, adirs.el, elec.el, apu.el, hyd.el, fire.el, fuel.el, air.el, ai.el, lt.el, signs.el);
   return { update: (s, d) => updaters.forEach(u => u.update(s, d)) };
 }
 

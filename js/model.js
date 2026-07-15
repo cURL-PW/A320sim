@@ -5,16 +5,26 @@ export const CHANNEL_NAME = 'a320sim-v1';
 
 export const ENG_MODE = ['CRANK', 'NORM', 'IGN/START'];
 export const IR_MODE = ['OFF', 'NAV', 'ATT'];
+export const STROBE_MODE = ['OFF', 'AUTO', 'ON'];
+export const XPDR_MODE = ['STBY', 'AUTO', 'TA/RA'];
+
+// The default fuel load (6264 kg) fits in the wing tanks — centre tank empty.
+// Running centre pumps on an empty tank lights their FAULT (low pressure).
+export const CENTER_TANK_EMPTY = true;
 
 export function coldAndDark() {
   return {
+    // Ground services (EFB stand-in)
+    gnd: { gpu: false },      // GPU must be connected before EXT PWR shows AVAIL
+
     // ELEC
     bat1: false,
     bat2: false,
-    extPwrOn: false,          // GPU is assumed connected while parked (AVAIL)
+    extPwrOn: false,
     gen1: true,               // GEN pb are normally left ON
     gen2: true,
     apuGenPb: true,
+    busTie: true,             // AUTO
 
     // APU
     apuMaster: false,
@@ -32,16 +42,25 @@ export function coldAndDark() {
     // FUEL pumps
     fuelPumps: { L1: false, L2: false, C1: false, C2: false, R1: false, R2: false },
 
-    // AIR COND / BLEED
-    pack1: true,
-    pack2: true,
+    // AIR COND / BLEED — packs stay OFF until APU bleed is available
+    pack1: false,
+    pack2: false,
     engBleed1: true,
     engBleed2: true,
     apuBleed: false,
 
+    // HYD (normal positions in cold & dark; verify-only)
+    hyd: { eng1Pump: true, ptu: true, eng2Pump: true },
+
+    // ANTI ICE
+    antiIce: { wing: false, eng1: false, eng2: false },
+
     // EXT LT / SIGNS
-    lights: { beacon: false, navLogo: false, strobe: false, wing: false },
+    lights: { beacon: false, navLogo: false, strobe: 'OFF', wing: false },
     signs: { seatBelts: false, noSmoking: false },
+
+    // ATC / transponder
+    xpdr: { code: '0000', mode: 'STBY' },
 
     // Engines
     engModeSel: 1,            // index into ENG_MODE

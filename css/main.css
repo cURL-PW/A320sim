@@ -215,6 +215,49 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 }
 .toggle.on .tg-state { color: #35e08a; }
 
+/* ---------------- 3-position switch ---------------- */
+.ctl:has(.t3) { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
+.ctl:has(.t3) .ctl-label { flex-basis: 100%; }
+.t3-positions {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 66px;
+  font-size: 8px;
+  color: #7d8894;
+  text-align: right;
+}
+.t3-positions .active { color: #ffffff; font-weight: 700; }
+.toggle.t3 { position: relative; }
+.t3 .tg-lever { transition: top 0.1s; }
+.t3-zone {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.t3-up { top: 0; }
+.t3-down { bottom: 0; }
+.t3-zone:active { background: #ffffff14; }
+
+/* ---------------- transponder ---------------- */
+.xpdr-code { display: flex; gap: 3px; }
+.xpdr-digit {
+  width: 30px;
+  height: 44px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 20px;
+  color: #3a3f45;
+  background: #101317;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+.xpdr-digit.powered { color: #ffb000; text-shadow: 0 0 6px #ffb00066; }
+.xpdr-digit:active { border-color: #7c8894; }
+
 /* ---------------- ENG master lever ---------------- */
 .master {
   width: 56px;

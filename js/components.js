@@ -84,6 +84,40 @@ export function toggle({ label, get, set, onText = 'ON', offText = 'OFF' }) {
   };
 }
 
+// Three-position switch (e.g. STROBE OFF/AUTO/ON, XPDR mode).
+// positions are listed bottom-to-top; tap the upper/lower half to move the lever.
+export function toggle3({ label, positions, get, set }) {
+  const wrap = div('ctl');
+  const posCol = div('t3-positions', wrap);
+  const posEls = [...positions].reverse().map(p => {
+    const e = document.createElement('span');
+    e.textContent = p;
+    posCol.appendChild(e);
+    return e;
+  });
+  const body = div('toggle t3', wrap);
+  const lever = div('tg-lever', body);
+  const up = document.createElement('button');
+  up.className = 't3-zone t3-up'; up.type = 'button'; up.setAttribute('aria-label', label + ' up');
+  const down = document.createElement('button');
+  down.className = 't3-zone t3-down'; down.type = 'button'; down.setAttribute('aria-label', label + ' down');
+  body.append(up, down);
+  div('ctl-label', wrap).textContent = label;
+  const max = positions.length - 1;
+  up.addEventListener('click', () => set(Math.min(max, get() + 1)));
+  down.addEventListener('click', () => set(Math.max(0, get() - 1)));
+  const tops = [36, 21, 6]; // lever y per index (bottom -> top), within the 66px body
+  return {
+    el: wrap,
+    update() {
+      const i = get();
+      lever.style.top = tops[i] + 'px';
+      lever.classList.toggle('up', i === max);
+      posEls.forEach((e, j) => e.classList.toggle('active', positions.length - 1 - j === i));
+    },
+  };
+}
+
 // ENG master lever.
 export function masterLever({ label, get, set }) {
   const wrap = div('ctl');

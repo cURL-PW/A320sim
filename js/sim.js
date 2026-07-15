@@ -10,6 +10,7 @@ function approach(v, target, rate, dt) {
 }
 
 export function tick(s, dt) {
+  if (!s.gnd.gpu) s.extPwrOn = false; // GPU unplugged drops external power
   const d = derive(s);
   s.t += dt;
   s.acTime = d.acPower ? s.acTime + dt : 0;

@@ -265,7 +265,7 @@ function buildElecPage(parent) {
       gen2S.setAttribute('class', d.eng2Run && s.gen2 ? 'g' : s.gen2 ? 'a' : 'w');
       apuGenS.textContent = d.apuAvail && s.apuGenPb ? '12 %' : 'OFF';
       apuGenS.setAttribute('class', d.apuAvail && s.apuGenPb ? 'g' : 'w');
-      extS.textContent = s.extPwrOn ? 'ON' : 'AVAIL';
+      extS.textContent = s.extPwrOn ? 'ON' : s.gnd.gpu ? 'AVAIL' : 'OFF';
       extS.setAttribute('class', s.extPwrOn ? 'g' : 'w');
       acTxt.setAttribute('class', d.acPower ? 'g' : 'a');
       dcTxt.setAttribute('class', d.dcPower ? 'g' : 'a');
