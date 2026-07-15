@@ -18,8 +18,14 @@ export function handleCduKey(s, key) {
   switch (key) {
     case 'MENU': c.page = 'MENU'; return;
     case 'INIT': c.page = 'INIT'; return;
+    case 'PERF': c.page = 'PERF'; return;
     case 'DATA': c.page = 'STATUS'; return;
-    case 'FPLN': case 'PERF': case 'PROG': case 'RAD':
+    case 'LEFT': case 'RIGHT': // slew between INIT A <-> INIT B
+      if (c.page === 'INIT') c.page = 'INITB';
+      else if (c.page === 'INITB') c.page = 'INIT';
+      return;
+    case 'UP': case 'DOWN': return;
+    case 'FPLN': case 'PROG': case 'RAD':
     case 'DIR': case 'FUEL': case 'SEC': case 'ATC': case 'AIRPORT':
       c.msg = 'NOT ALLOWED'; return;
   }
@@ -63,6 +69,62 @@ function handleLsk(s, key) {
           if (ir.sel !== 'OFF' && !ir.aligned) { ir.aligned = true; ir.align = 999; any = true; }
         }
         if (!any) c.msg = 'NOT ALLOWED';
+        return;
+      }
+    }
+    c.msg = 'NOT ALLOWED';
+    return;
+  }
+  if (c.page === 'INITB') {
+    switch (key) {
+      case 'LSK1R': { // ZFW/ZFWCG
+        const m = c.scratch.match(/^(\d{2}(?:\.\d)?)\/(\d{2}(?:\.\d)?)$/);
+        if (m && +m[1] >= 35 && +m[1] <= 80 && +m[2] >= 15 && +m[2] <= 45) {
+          c.zfw = +m[1]; c.zfwcg = +m[2]; c.scratch = '';
+        } else c.msg = 'FORMAT ERROR';
+        return;
+      }
+      case 'LSK2R': { // BLOCK
+        const m = c.scratch.match(/^(\d{1,2}(?:\.\d)?)$/);
+        if (m && +m[1] >= 1 && +m[1] <= 25) { c.block = +m[1]; c.scratch = ''; }
+        else c.msg = 'FORMAT ERROR';
+        return;
+      }
+    }
+    c.msg = 'NOT ALLOWED';
+    return;
+  }
+  if (c.page === 'PERF') {
+    const num3 = /^\d{3}$/;
+    switch (key) {
+      case 'LSK1L':
+        if (num3.test(c.scratch) && +c.scratch >= 100 && +c.scratch <= 180) { c.v1 = +c.scratch; c.scratch = ''; }
+        else c.msg = 'FORMAT ERROR';
+        return;
+      case 'LSK2L':
+        if (num3.test(c.scratch) && +c.scratch >= (c.v1 || 100) && +c.scratch <= 185) { c.vr = +c.scratch; c.scratch = ''; }
+        else c.msg = c.v1 && num3.test(c.scratch) ? 'VR MUST BE ≥ V1' : 'FORMAT ERROR';
+        return;
+      case 'LSK3L':
+        if (num3.test(c.scratch) && +c.scratch >= (c.vr || 100) && +c.scratch <= 190) { c.v2 = +c.scratch; c.scratch = ''; }
+        else c.msg = c.vr && num3.test(c.scratch) ? 'V2 MUST BE ≥ VR' : 'FORMAT ERROR';
+        return;
+      case 'LSK4L': { // TRANS ALT
+        const m = c.scratch.match(/^(\d{4,5})$/);
+        if (m && +m[1] >= 2000 && +m[1] <= 18000) { c.transAlt = +m[1]; c.scratch = ''; }
+        else c.msg = 'FORMAT ERROR';
+        return;
+      }
+      case 'LSK3R': { // FLAPS/THS
+        const m = c.scratch.match(/^([1-3])(\/(UP|DN)\d(\.\d)?)?$/);
+        if (m) { c.flapsThs = m[2] ? c.scratch : `${m[1]}/UP0.5`; c.scratch = ''; }
+        else c.msg = 'FORMAT ERROR';
+        return;
+      }
+      case 'LSK4R': { // FLEX TEMP
+        const m = c.scratch.match(/^(\d{2})$/);
+        if (m && +m[1] >= 30 && +m[1] <= 70) { c.flex = +m[1]; c.scratch = ''; }
+        else c.msg = 'FORMAT ERROR';
         return;
       }
     }

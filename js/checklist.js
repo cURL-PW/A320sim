@@ -2,7 +2,7 @@
 // the first unchecked item is "active"; when its predicate becomes true it is
 // checked (sticky in s.ckDone) and the next item becomes active. This keeps
 // shutdown items (e.g. BAT OFF) from self-checking at cold & dark.
-import { ENG_MODE } from './model.js';
+import { ENG_MODE, CLEARANCE } from './model.js';
 
 const wingPumps = s => s.fuelPumps.L1 && s.fuelPumps.L2 && s.fuelPumps.R1 && s.fuelPumps.R2;
 const ctrPumpsOff = s => !s.fuelPumps.C1 && !s.fuelPumps.C2;
@@ -25,7 +25,12 @@ export const PHASES = [
       { id: 'navlogo', label: 'NAV & LOGO LT', action: 'ON', done: s => s.lights.navLogo },
       { id: 'strobe', label: 'STROBE', action: 'AUTO', done: s => s.lights.strobe !== 'OFF' },
       { id: 'signs', label: 'SEAT BELTS / NO SMOKING', action: 'ON', done: s => s.signs.seatBelts && s.signs.noSmoking },
-      { id: 'cdu-init', label: 'MCDU INIT (FROM/TO)', action: 'ENTER', done: s => !!s.cdu.from },
+      { id: 'cdu-init', label: 'MCDU INIT A (FROM/TO)', action: 'ENTER', done: s => !!s.cdu.from },
+      { id: 'cdu-initb', label: 'MCDU INIT B (ZFW/BLOCK)', action: 'ENTER', done: s => !!s.cdu.zfw && !!s.cdu.block },
+      { id: 'cdu-perf', label: 'MCDU PERF (V1/VR/V2..)', action: 'ENTER', done: s => !!s.cdu.v1 && !!s.cdu.vr && !!s.cdu.v2 && !!s.cdu.flapsThs && !!s.cdu.transAlt },
+      { id: 'fcu-managed', label: 'FCU SPD / HDG', action: 'MANAGED', done: s => s.fcu.spdManaged && s.fcu.hdgManaged },
+      { id: 'fcu-alt', label: 'FCU INIT ALT', action: 'SET 6000', done: s => s.fcu.alt === CLEARANCE.initAlt },
+      { id: 'fcu-baro', label: 'BARO', action: `QNH ${CLEARANCE.qnh}`, done: s => s.fcu.baroMode === 'QNH' && s.fcu.baro === CLEARANCE.qnh },
     ],
   },
   {
@@ -57,11 +62,21 @@ export const PHASES = [
       { id: 'apumoff', label: 'APU MASTER SW', action: 'OFF', done: s => !s.apuMaster },
       { id: 'packs-on2', label: 'PACK 1 + 2', action: 'ON', done: packsOn },
       { id: 'extoff', label: 'EXT PWR', action: 'OFF', done: s => !s.extPwrOn },
+      { id: 'splrs', label: 'GND SPLRS', action: 'ARM', done: s => s.spdBrkArmed },
+      { id: 'flaps', label: 'FLAPS', action: 'SET 1', done: s => s.flapLever === 1 && Math.abs(s.flapPos - 1) < 0.05 },
+      { id: 'fctl', label: 'F/CTL', action: 'CHECK', done: s => Object.values(s.fctl.done).every(v => v) },
+      { id: 'autobrk', label: 'AUTO BRK', action: 'MAX', done: s => s.autoBrk === 'MAX' },
+      { id: 'taxi-lt', label: 'NOSE TAXI / RWY TURN OFF', action: 'ON', done: s => s.lights.nose === 'TAXI' && s.lights.rwyTurnOff },
+      { id: 'tocfg', label: 'T.O CONFIG', action: 'TEST', done: s => s.toConfig === 'normal' },
     ],
   },
   {
     id: 'shutdown', title: 'SHUTDOWN & SECURING', items: [
       { id: 'sd-parkbrk', label: 'PARKING BRAKE', action: 'ON', done: s => s.parkBrk },
+      { id: 'sd-flaps', label: 'FLAPS', action: '0', done: s => s.flapLever === 0 && s.flapPos < 0.05 },
+      { id: 'sd-splrs', label: 'GND SPLRS', action: 'DISARM', done: s => !s.spdBrkArmed },
+      { id: 'sd-autobrk', label: 'AUTO BRK', action: 'OFF', done: s => s.autoBrk === 'OFF' },
+      { id: 'sd-taxi-lt', label: 'NOSE / RWY TURN OFF', action: 'OFF', done: s => s.lights.nose === 'OFF' && !s.lights.rwyTurnOff },
       { id: 'sd-ext', label: 'EXT PWR', action: 'ON', done: s => s.extPwrOn },
       { id: 'sd-eng', label: 'ENG MASTER 1 + 2', action: 'OFF', done: s => s.eng.every(e => e.state === 'off') && !s.engMaster[0] && !s.engMaster[1] },
       { id: 'sd-beacon', label: 'BEACON', action: 'OFF', done: s => !s.lights.beacon },

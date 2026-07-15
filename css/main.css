@@ -319,6 +319,116 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 }
 .pbrk.on .pbrk-handle { transform: rotate(0deg); }
 
+/* ---------------- FCU ---------------- */
+.fcu-clearance {
+  text-align: center;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: #7fb2d9;
+  background: #101d26;
+  border: 1px solid #1d3a4d;
+  border-radius: 4px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+}
+.fcu-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.fcu-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #262d35;
+  border: 1px solid #3a434d;
+  border-radius: 6px;
+  padding: 6px 10px 8px;
+  min-width: 108px;
+}
+.fcu-winlabel { font-size: 9px; letter-spacing: 2px; color: #aeb9c4; }
+.fcu-window {
+  width: 96px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 19px;
+  color: #ffb000;
+  text-shadow: 0 0 6px #ffb00055;
+  background: #0a0c0e;
+  border: 1px solid #3a434d;
+  border-radius: 3px;
+}
+#fcu-body.unpowered .fcu-window { color: transparent; text-shadow: none; }
+.fcu-push {
+  min-width: 64px;
+  min-height: 40px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  color: #cdd6de;
+  background: radial-gradient(circle at 35% 30%, #3d454e, #14171b);
+  border: 2px solid #4a545f;
+}
+.fcu-push.managed { color: #35e08a; border-color: #2a6a4a; }
+.fcu-knobwrap { position: relative; display: flex; gap: 4px; }
+.fcu-knob {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3d454e, #14171b);
+  border: 2px solid #4a545f;
+  pointer-events: none;
+}
+.fcu-zone {
+  width: 52px;
+  min-height: 44px;
+  font-size: 16px;
+  color: #8b98a5;
+  background: transparent;
+  border: 0;
+}
+.fcu-zone:active { color: #fff; }
+.fcu-std {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #cdd6de;
+  background: #101317;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+
+/* ---------------- ground services / F-CTL check ---------------- */
+.gnd-load {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #9fc3dd;
+  background: #101d26;
+  border: 1px solid #1d3a4d;
+  border-radius: 4px;
+  padding: 4px 8px;
+  align-self: center;
+}
+.fctl-btn {
+  min-width: 46px;
+  min-height: 46px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cdd6de;
+  background: #101317;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+.fctl-btn:active { background: #232a32; }
+.fctl-btn.done { color: #35e08a; border-color: #2a6a4a; }
+
+.ecam-btns button.tocfg { color: #ffb000; }
+
 /* ---------------- ECAM ---------------- */
 .screenwrap {
   background: #000;
@@ -354,6 +464,7 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 .ecam-screen .sysbox { fill: none; stroke: #aeb9c4; stroke-width: 1.5; }
 .ecam-screen .outline { fill: none; stroke: #aeb9c4; stroke-width: 2; }
 .ecam-screen .door-ok { fill: #35e08a; }
+.ecam-screen .ptr { fill: #35e08a; }
 
 .ecam-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 .ecam-btns button {

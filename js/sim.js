@@ -19,6 +19,15 @@ export function tick(s, dt) {
   tickAdirs(s, d, dt);
   tickEngines(s, d, dt);
 
+  // Flaps travel toward the lever position (needs hydraulics = an engine running)
+  if (d.anyEngRun) s.flapPos = approach(s.flapPos, s.flapLever, 0.35, dt);
+
+  // Flight-control deflections decay back to neutral after each check input
+  const f = s.fctl;
+  f.ail = approach(f.ail, 0, 1.6, dt);
+  f.elev = approach(f.elev, 0, 1.6, dt);
+  f.rud = approach(f.rud, 0, 1.6, dt);
+
   // Fuel burn (very rough): engines + APU
   const burn = (s.eng[0].ff + s.eng[1].ff + (s.apu.n > 10 ? 120 : 0)) / 3600;
   s.fob = Math.max(0, s.fob - burn * dt);
@@ -128,6 +137,8 @@ export function sdAutoPage(s, d) {
   if (s.sd.manual) return s.sd.manual;
   if (s.eng.some(e => e.state === 'starting') ||
       (ENG_MODE[s.engModeSel] === 'IGN/START' && s.engMaster.some(m => m))) return 'ENG';
+  // sidestick/rudder input on the ground calls up the F/CTL page
+  if (d.anyEngRun && (Math.abs(s.fctl.ail) > 0.05 || Math.abs(s.fctl.elev) > 0.05 || Math.abs(s.fctl.rud) > 0.05)) return 'FCTL';
   if (s.apuMaster && s.apu.state !== 'avail') return 'APU';
   if (d.anyEngRun) return 'WHEEL';
   return 'DOOR';

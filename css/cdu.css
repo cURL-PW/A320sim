@@ -90,6 +90,13 @@ html, body {
 }
 .cdu-key.page { font-size: 10px; height: 40px; padding: 2px; }
 
+#cdu-slewkeys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.cdu-key.slew { height: 36px; min-height: 36px; color: #00e5ff; }
+
 #cdu-numkeys {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

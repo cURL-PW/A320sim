@@ -70,6 +70,11 @@ const PAGE_KEYS = [
 const pageRow = document.getElementById('cdu-pagekeys');
 for (const [label, k] of PAGE_KEYS) addKey(pageRow, label, k, 'page');
 
+const slewRow = document.getElementById('cdu-slewkeys');
+for (const [label, k] of [['←', 'LEFT'], ['↑', 'UP'], ['↓', 'DOWN'], ['→', 'RIGHT']]) {
+  addKey(slewRow, label, k, 'slew');
+}
+
 const ROWS = ['ABCDE', 'FGHIJ', 'KLMNO', 'PQRST', 'UVWXY'];
 for (const row of ROWS) {
   for (const ch of row) addKey(kb, ch, ch);

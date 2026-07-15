@@ -88,11 +88,14 @@ export function buildEwd(root) {
   const fobVal = txt(main, 85, 375, '', 'g', 'start');
   txt(main, 165, 375, 'KG', 'c small', 'start');
   void fobLbl;
+  const flapLbl = txt(main, 200, 375, 'FLAP', 'w small', 'start');
+  const flapVal = txt(main, 245, 375, '', 'g', 'start');
+  void flapLbl;
 
   // left memo (takeoff/landing memo area) and right memo
   const leftMemo = [], rightMemo = [];
-  for (let i = 0; i < 4; i++) leftMemo.push(txt(main, 20, 400 + i * 18, '', 'g', 'start'));
-  for (let i = 0; i < 5; i++) rightMemo.push(txt(main, 315, 372 + i * 18, '', 'g', 'start'));
+  for (let i = 0; i < 4; i++) leftMemo.push(txt(main, 20, 400 + i * 17, '', 'g', 'start'));
+  for (let i = 0; i < 6; i++) rightMemo.push(txt(main, 315, 370 + i * 15.5, '', 'g small', 'start'));
 
   return {
     update(s, d) {
@@ -110,21 +113,28 @@ export function buildEwd(root) {
         ign[i].setAttribute('class', 'w');
       }
       fobVal.textContent = String(Math.round(s.fob / 10) * 10);
+      const flapMoving = Math.abs(s.flapPos - s.flapLever) > 0.02;
+      flapVal.textContent = s.flapLever === 0 && !flapMoving && s.flapPos < 0.02 ? '0'
+        : ['0', '1+F', '2', '3', 'FULL'][s.flapLever];
+      flapVal.setAttribute('class', flapMoving ? 'c' : 'g');
 
       const rm = [];
       if (d.apuAvail) rm.push(['APU AVAIL', 'g']);
       if (s.apuBleed && d.apuAvail) rm.push(['APU BLEED', 'g']);
       if (s.parkBrk) rm.push(['PARK BRK', 'g']);
+      if (s.spdBrkArmed) rm.push(['GND SPLRS ARMED', 'g']);
       if (s.signs.seatBelts) rm.push(['SEAT BELTS', 'g']);
       if (s.signs.noSmoking) rm.push(['NO SMOKING', 'g']);
       rightMemo.forEach((t, i) => {
         t.textContent = rm[i] ? rm[i][0] : '';
-        t.setAttribute('class', rm[i] ? rm[i][1] : 'g');
+        t.setAttribute('class', (rm[i] ? rm[i][1] : 'g') + ' small');
       });
 
       const lm = [];
       const starting = s.eng.some(e => e.state === 'starting');
       if (starting) lm.push(['ENG START', 'g']);
+      if (s.toConfig === 'normal') lm.push(['T.O CONFIG NORMAL', 'g']);
+      if (s.toConfig === 'warning') lm.push(['CONFIG FLAPS NOT IN T.O RANGE', 'a']);
       if (!d.anyEngRun && !starting && d.screensOn) lm.push(['NORMAL', 'g']);
       leftMemo.forEach((t, i) => {
         t.textContent = lm[i] ? lm[i][0] : '';
@@ -135,7 +145,7 @@ export function buildEwd(root) {
 }
 
 // ---------------------------------------------------------------- SD (lower)
-const SD_PAGES = ['ENG', 'APU', 'ELEC', 'WHEEL', 'DOOR'];
+const SD_PAGES = ['ENG', 'APU', 'ELEC', 'FCTL', 'WHEEL', 'DOOR'];
 
 export function buildSd(root, act) {
   const { svg, boot, main } = screenFrame();
@@ -146,6 +156,7 @@ export function buildSd(root, act) {
     ELEC: buildElecPage(main),
     APU: buildApuPage(main),
     ENG: buildEngPage(main),
+    FCTL: buildFctlPage(main),
     WHEEL: buildWheelPage(main),
   };
 
@@ -171,6 +182,16 @@ export function buildSd(root, act) {
     btns[p] = b;
     btnRow.appendChild(b);
   }
+  // T.O CONFIG test (real one sits on the ECAM control panel)
+  const toBtn = document.createElement('button');
+  toBtn.type = 'button';
+  toBtn.textContent = 'T.O CFG';
+  toBtn.className = 'tocfg';
+  toBtn.addEventListener('click', () => act.do(s => {
+    if (!s.eng.some(e => e.state === 'running')) return;
+    s.toConfig = s.flapLever >= 1 && s.flapLever <= 3 ? 'normal' : 'warning';
+  }));
+  btnRow.appendChild(toBtn);
   root.appendChild(btnRow);
 
   return {
@@ -324,6 +345,40 @@ function buildEngPage(parent) {
         ignTxt[i].textContent = e.ignition ? (i === 0 ? 'A' : 'B') : '';
         svTxt[i].textContent = e.starter ? 'OPEN' : '';
       }
+    },
+  };
+}
+
+function buildFctlPage(parent) {
+  const g = el('g', {}, parent);
+  pageTitle(g, 'F/CTL');
+  // aileron scales (left/right), elevator scale, rudder arc
+  txt(g, 110, 90, 'L AIL', 'w small'); txt(g, 490, 90, 'R AIL', 'w small');
+  el('line', { x1: 110, y1: 105, x2: 110, y2: 225, class: 'sep-w' }, g);
+  el('line', { x1: 490, y1: 105, x2: 490, y2: 225, class: 'sep-w' }, g);
+  const ailL = el('path', { d: 'M 110 165 l -14 -8 l 0 16 Z', class: 'ptr' }, g);
+  const ailR = el('path', { d: 'M 490 165 l 14 -8 l 0 16 Z', class: 'ptr' }, g);
+  txt(g, 245, 90, 'ELEV L', 'w small'); txt(g, 355, 90, 'ELEV R', 'w small');
+  el('line', { x1: 245, y1: 105, x2: 245, y2: 225, class: 'sep-w' }, g);
+  el('line', { x1: 355, y1: 105, x2: 355, y2: 225, class: 'sep-w' }, g);
+  const elevL = el('path', { d: 'M 245 165 l -14 -8 l 0 16 Z', class: 'ptr' }, g);
+  const elevR = el('path', { d: 'M 355 165 l 14 -8 l 0 16 Z', class: 'ptr' }, g);
+  txt(g, 300, 280, 'RUD', 'w small');
+  el('path', { d: arcPath(300, 290, 75, 55, 125), class: 'arc-w' }, g);
+  const rud = el('line', { x1: 300, y1: 290, x2: 300, y2: 360, class: 'needle' }, g);
+  const spdBrkTxt = txt(g, 300, 60, '', 'g mid');
+  return {
+    g,
+    update(s) {
+      const ailY = 165 - s.fctl.ail * 55, elevY = 165 - s.fctl.elev * 55;
+      ailL.setAttribute('d', `M 110 ${ailY} l -14 -8 l 0 16 Z`);
+      ailR.setAttribute('d', `M 490 ${165 + s.fctl.ail * 55} l 14 -8 l 0 16 Z`);
+      elevL.setAttribute('d', `M 245 ${elevY} l -14 -8 l 0 16 Z`);
+      elevR.setAttribute('d', `M 355 ${elevY} l 14 -8 l 0 16 Z`);
+      const a = (90 + s.fctl.rud * 30) * Math.PI / 180;
+      rud.setAttribute('x2', (300 + 70 * Math.cos(a)).toFixed(1));
+      rud.setAttribute('y2', (290 + 70 * Math.sin(a)).toFixed(1));
+      spdBrkTxt.textContent = s.spdBrkArmed ? 'SPD BRK ARMED' : '';
     },
   };
 }

@@ -12,6 +12,15 @@ export const XPDR_MODE = ['STBY', 'AUTO', 'TA/RA'];
 // Running centre pumps on an empty tank lights their FAULT (low pressure).
 export const CENTER_TANK_EMPTY = true;
 
+export const FLAP_POS = ['0', '1', '2', '3', 'FULL'];
+export const NOSE_LT = ['OFF', 'TAXI', 'T.O'];
+export const AUTO_BRK = ['OFF', 'LO', 'MED', 'MAX'];
+
+// Fixed "clearance" for the training scenario (shown on the FCU panel):
+// initial altitude, local QNH, squawk. The load sheet mirrors the EFB.
+export const CLEARANCE = { initAlt: 6000, qnh: 1006, squawk: '2000' };
+export const LOADSHEET = { zfw: 54.3, zfwcg: 28.0, block: 6.3 };
+
 export function coldAndDark() {
   return {
     // Ground services (EFB stand-in)
@@ -56,11 +65,30 @@ export function coldAndDark() {
     antiIce: { wing: false, eng1: false, eng2: false },
 
     // EXT LT / SIGNS
-    lights: { beacon: false, navLogo: false, strobe: 'OFF', wing: false },
+    lights: { beacon: false, navLogo: false, strobe: 'OFF', wing: false, nose: 'OFF', rwyTurnOff: false },
     signs: { seatBelts: false, noSmoking: false },
 
     // ATC / transponder
     xpdr: { code: '0000', mode: 'STBY' },
+
+    // FCU / glareshield ("previous flight" values: SPD/HDG left selected)
+    fcu: {
+      spdManaged: false, spd: 250,
+      hdgManaged: false, hdg: 320,
+      alt: 100,
+      baroMode: 'STD', baro: 1013,
+    },
+
+    // Flight prep (after start)
+    spdBrkArmed: false,
+    flapLever: 0,             // index into FLAP_POS
+    flapPos: 0,               // animated actual position
+    autoBrk: 'OFF',
+    fctl: {
+      ail: 0, elev: 0, rud: 0,   // commanded deflection -1..1 (decays)
+      done: { left: false, right: false, up: false, down: false, rudl: false, rudr: false },
+    },
+    toConfig: null,           // null | 'normal' | 'warning'
 
     // Engines
     engModeSel: 1,            // index into ENG_MODE
@@ -83,6 +111,8 @@ export function coldAndDark() {
       scratch: '',
       msg: null,
       from: null, to: null, fltNbr: null, ci: null, crzFl: null,
+      zfw: null, zfwcg: null, block: null,                       // INIT B
+      v1: null, vr: null, v2: null, transAlt: null, flapsThs: null, flex: null, // PERF
     },
 
     // Checklist progress: itemId -> true (sticky)

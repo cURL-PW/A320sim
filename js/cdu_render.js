@@ -17,7 +17,7 @@ export function renderCdu(s, d) {
     seg(8, '<CFDS', 'w');
     seg(12, 'RETURN>', 'w', 'r');
   } else if (c.page === 'INIT') {
-    seg(0, 'INIT', 'w', 'c');
+    seg(0, 'INIT', 'w', 'c'); seg(0, '→', 'w', 'r');
     seg(1, 'CO RTE', 'label'); seg(1, 'FROM/TO', 'label', 'r');
     seg(2, '__________', 'a');
     seg(2, c.from ? `${c.from}/${c.to}` : '____/____', c.from ? 'c-col' : 'a', 'r');
@@ -35,6 +35,42 @@ export function renderCdu(s, d) {
     seg(12, (c.crzFl || '_____') + ' /-47°', c.crzFl ? 'c-col' : 'a');
     seg(11, 'TROPO', 'label', 'r');
     seg(12, '36090', 'c-col', 'r');
+  } else if (c.page === 'INITB') {
+    seg(0, 'INIT B', 'w', 'c'); seg(0, '←', 'w', 'l');
+    seg(1, 'TAXI', 'label'); seg(1, 'ZFW /ZFWCG', 'label', 'r');
+    seg(2, '0.4', 'c-col');
+    seg(2, c.zfw ? `${c.zfw.toFixed(1)}/${c.zfwcg.toFixed(1)}` : '___._/__._', c.zfw ? 'c-col' : 'a', 'r');
+    seg(3, 'TRIP /TIME', 'label'); seg(3, 'BLOCK', 'label', 'r');
+    if (c.zfw && c.block) seg(4, '1.9/0045', 'g');
+    seg(4, c.block ? c.block.toFixed(1) : '__._', c.block ? 'c-col' : 'a', 'r');
+    seg(5, 'RTE RSV/%', 'label');
+    seg(6, c.block ? '0.1/5.0' : '---/-.-', c.block ? 'g' : 'w');
+    seg(7, 'ALTN', 'label'); seg(7, 'TOW', 'label', 'r');
+    seg(8, '0.4', 'g');
+    seg(8, c.zfw && c.block ? (c.zfw + c.block).toFixed(1) : '---.-', c.zfw && c.block ? 'g' : 'w', 'r');
+    seg(9, 'FINAL/TIME', 'label'); seg(9, 'LW', 'label', 'r');
+    seg(10, '0.9/0030', 'g');
+    seg(10, c.zfw && c.block ? (c.zfw + c.block - 1.9).toFixed(1) : '---.-', c.zfw && c.block ? 'g' : 'w', 'r');
+    seg(11, 'EXTRA/TIME', 'label');
+    seg(12, c.block ? '1.2/0100' : '---/----', c.block ? 'g' : 'w');
+  } else if (c.page === 'PERF') {
+    seg(0, 'TAKE OFF', 'w', 'c');
+    seg(1, 'V1', 'label'); seg(1, 'RWY', 'label', 'r');
+    seg(2, c.v1 ? String(c.v1) : '___', c.v1 ? 'c-col' : 'a');
+    seg(2, c.from ? '34R' : '---', 'g', 'r');
+    seg(3, 'VR', 'label'); seg(3, 'TO SHIFT', 'label', 'r');
+    seg(4, c.vr ? String(c.vr) : '___', c.vr ? 'c-col' : 'a');
+    seg(4, '----', 'w', 'r');
+    seg(5, 'V2', 'label'); seg(5, 'FLAPS/THS', 'label', 'r');
+    seg(6, c.v2 ? String(c.v2) : '___', c.v2 ? 'c-col' : 'a');
+    seg(6, c.flapsThs || '_/____', c.flapsThs ? 'c-col' : 'a', 'r');
+    seg(7, 'TRANS ALT', 'label'); seg(7, 'FLEX TO TEMP', 'label', 'r');
+    seg(8, c.transAlt ? String(c.transAlt) : '_____', c.transAlt ? 'c-col' : 'a');
+    seg(8, c.flex ? `${c.flex}°` : '__°', c.flex ? 'c-col' : 'a', 'r');
+    seg(9, 'THR RED/ACC', 'label');
+    seg(10, '1500/1500', 'c-col');
+    seg(11, 'UPLINK', 'label'); seg(11, 'NEXT', 'label', 'r');
+    seg(12, '<TO DATA', 'w'); seg(12, 'PHASE>', 'w', 'r');
   } else if (c.page === 'STATUS') {
     seg(0, 'A320-214', 'w', 'c');
     seg(1, 'ENG', 'label');

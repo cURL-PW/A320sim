@@ -1,7 +1,7 @@
 // Overhead panel: GND / ADIRS / ELEC / APU / HYD / FIRE / FUEL / AIR COND /
 // ANTI ICE / EXT LT / SIGNS
 import { korry, rotary, toggle, toggle3, section } from '../components.js';
-import { IR_MODE, STROBE_MODE, CENTER_TANK_EMPTY } from '../model.js';
+import { IR_MODE, STROBE_MODE, NOSE_LT, CENTER_TANK_EMPTY, LOADSHEET } from '../model.js';
 
 export function buildOverhead(root, act) {
   const updaters = [];
@@ -14,6 +14,10 @@ export function buildOverhead(root, act) {
     get: () => act.state().gnd.gpu,
     set: v => act.do(s => { s.gnd.gpu = v; }),
   }));
+  const load = document.createElement('div');
+  load.className = 'gnd-load';
+  load.innerHTML = `LOADSHEET<br>ZFW ${LOADSHEET.zfw.toFixed(1)} / CG ${LOADSHEET.zfwcg.toFixed(1)}<br>BLOCK ${LOADSHEET.block.toFixed(1)}`;
+  gnd.body.appendChild(load);
 
   // --- ADIRS ---
   const adirs = section('ADIRS');
@@ -179,6 +183,13 @@ export function buildOverhead(root, act) {
   }));
   add(lt.body, toggle({ label: 'WING', get: () => act.state().lights.wing,
     set: v => act.do(s => { s.lights.wing = v; }) }));
+  add(lt.body, toggle3({
+    label: 'NOSE', positions: NOSE_LT,
+    get: () => NOSE_LT.indexOf(act.state().lights.nose),
+    set: v => act.do(s => { s.lights.nose = NOSE_LT[v]; }),
+  }));
+  add(lt.body, toggle({ label: 'RWY TURN OFF', get: () => act.state().lights.rwyTurnOff,
+    set: v => act.do(s => { s.lights.rwyTurnOff = v; }) }));
 
   // --- SIGNS ---
   const signs = section('SIGNS');

@@ -4,6 +4,7 @@ import { tick } from './sim.js';
 import { openChannel } from './sync.js';
 import { buildOverhead } from './panels/overhead.js';
 import { buildPedestal } from './panels/pedestal.js';
+import { buildFcu } from './panels/fcu.js';
 import { buildEwd, buildSd } from './ecam.js';
 import { buildChecklist, tickChecklist, currentPhase } from './checklist.js';
 import { handleCduKey } from './cdu_logic.js';
@@ -27,6 +28,7 @@ function broadcast() {
 // --- build UI ---
 const overhead = buildOverhead(document.getElementById('overhead-body'), act);
 const pedestal = buildPedestal(document.getElementById('pedestal-body'), act);
+const fcu = buildFcu(document.getElementById('fcu-body'), act);
 const ewd = buildEwd(document.getElementById('ewd'));
 const sd = buildSd(document.getElementById('sd'), act);
 const checklist = buildChecklist(document.getElementById('checklist-body'), act);
@@ -54,6 +56,7 @@ function refresh() {
   const d = derive(state);
   overhead.update(state, d);
   pedestal.update(state, d);
+  fcu.update(state, d);
   ewd.update(state, d);
   sd.update(state, d);
   checklist.update(state);

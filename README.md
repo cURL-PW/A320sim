@@ -45,13 +45,20 @@ PC では CDU ボタンでポップアップ窓が開きます。
 
 1. **COCKPIT PREPARATION** — GND: GPU 接続(EFB 相当)→ BAT 1+2 ON → EXT PWR ON → ADIRS NAV →
    HYD / ELEC / FIRE パネル確認 → ANTI ICE OFF 確認 → PACK 1+2 OFF 確認 → NAV & LOGO ON →
-   STROBE AUTO → SIGNS ON → MCDU INIT(FROM/TO 入力 例: `RJTT/RJOO` → LSK1R)
+   STROBE AUTO → SIGNS ON → MCDU INIT A(FROM/TO 例: `RJTT/RJOO` → LSK1R)→
+   MCDU INIT B(→キーで移動。ZFW/CG 例: `54.3/28.0` → LSK1R、BLOCK `6.3` → LSK2R。値は GND SERVICES のロードシート参照)→
+   MCDU PERF(V1/VR/V2・TRANS ALT・FLAPS/THS `1/UP0.5`・FLEX)→
+   FCU: SPD/HDG を PUSH でマネージド(`---`)→ INIT ALT 6000 → BARO を QNH 1006(FCU 上部のクリアランス表示参照)
 2. **BEFORE START** — ウィング燃料ポンプ(4)ON(**CTR ポンプはセンター燃料なしのため OFF のまま**。
    ON にすると FAULT/低圧が点灯)→ APU MASTER ON → APU START(AVAIL まで約 25 秒)→ APU BLEED ON →
    **PACK 1+2 ON** → XPDR コード 2000 / STBY → PARK BRK 確認 → BEACON ON → **PACK 1+2 OFF(始動用)**
 3. **ENGINE START** — ENG MODE SEL を IGN/START → ENG MASTER **2** ON(N2 安定まで約 40 秒)→ ENG MASTER **1** ON → MODE SEL を NORM
-4. **AFTER START** — APU BLEED OFF → APU MASTER OFF → **PACK 1+2 ON** → EXT PWR OFF
-5. **SHUTDOWN & SECURING** — PARK BRK ON → EXT PWR ON → ENG MASTER 1+2 OFF → BEACON OFF → SEAT BELTS OFF → PACK 1+2 OFF → FUEL PUMPS OFF → ADIRS OFF → NAV & LOGO OFF → EXT PWR OFF → BAT 1+2 OFF(Cold & Dark に戻る)
+4. **AFTER START** — APU BLEED OFF → APU MASTER OFF → **PACK 1+2 ON** → EXT PWR OFF →
+   GND SPLRS ARM → FLAPS 1(ECAM に 1+F 表示)→ F/CTL チェック(◀▲▼▶/RUD 全打・SD の F/CTL ページ連動)→
+   AUTO BRK MAX → NOSE TAXI / RWY TURN OFF ON → **T.O CONFIG テスト**(フラップ未設定だと CONFIG 警告)
+5. **SHUTDOWN & SECURING** — PARK BRK ON → FLAPS 0 → GND SPLRS DISARM → AUTO BRK OFF →
+   NOSE/RWY TURN OFF OFF → EXT PWR ON → ENG MASTER 1+2 OFF → BEACON OFF → SEAT BELTS OFF →
+   PACK 1+2 OFF → FUEL PUMPS OFF → ADIRS OFF → NAV & LOGO OFF → EXT PWR OFF → BAT 1+2 OFF(Cold & Dark に戻る)
 
 ※ ADIRS のアライメントは実機の約 10 分を 30 秒に短縮しています(MCDU INIT ページの
 `ALIGN IRS>` で即時完了も可能)。エンジン始動には AC 電源と APU ブリードが必要です。
@@ -62,6 +69,7 @@ PC では CDU ボタンでポップアップ窓が開きます。
 | パス | 内容 |
 |---|---|
 | `index.html` / `js/main.js` | メイン窓(シミュレーション本体) |
+| `js/panels/fcu.js` | FCU / グレアシールド(SPD/HDG マネージド、ALT、QNH) |
 | `cdu.html` / `js/cdu.js` | MCDU 別窓(表示+キー入力のみ) |
 | `js/model.js` | 状態モデルと派生値 |
 | `js/sim.js` | 電源・APU・エンジン・ADIRS のシミュレーション |
