@@ -8,12 +8,16 @@ import { buildFcu } from './panels/fcu.js';
 import { buildEwd, buildSd } from './ecam.js';
 import { buildChecklist, tickChecklist, currentPhase } from './checklist.js';
 import { handleCduKey } from './cdu_logic.js';
+import { createSound } from './sound.js';
 
 let state = coldAndDark();
 
+const sound = createSound();
+document.addEventListener('pointerdown', () => sound.ensure(), { capture: true });
+
 const act = {
   state: () => state,
-  do(fn) { fn(state); refresh(); },
+  do(fn) { sound.click(); fn(state); refresh(); },
 };
 
 const channel = openChannel(msg => {
@@ -51,7 +55,13 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     refresh();
   }
 });
+const sndBtn = document.getElementById('btn-sound');
+sndBtn.addEventListener('click', () => {
+  sound.setMuted(!sound.muted);
+  sndBtn.textContent = sound.muted ? '🔇' : '🔊';
+});
 
+let prevAckCaut = true;
 function refresh() {
   const d = derive(state);
   overhead.update(state, d);
@@ -62,6 +72,12 @@ function refresh() {
   checklist.update(state);
   const ph = currentPhase(state);
   phaseEl.textContent = ph ? ph.title : 'FLOW COMPLETE';
+
+  sound.update(state, d);
+  if (!state.ackCaut && prevAckCaut) sound.chime();  // new caution -> single chime
+  prevAckCaut = state.ackCaut;
+  sound.setCrc(!state.ackWarn);                      // unacknowledged warning -> CRC
+
   broadcast();
 }
 

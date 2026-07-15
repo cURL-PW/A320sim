@@ -1,7 +1,7 @@
 // Overhead panel: GND / ADIRS / ELEC / APU / HYD / FIRE / FUEL / AIR COND /
 // ANTI ICE / EXT LT / SIGNS
 import { korry, rotary, toggle, toggle3, section } from '../components.js';
-import { IR_MODE, STROBE_MODE, NOSE_LT, CENTER_TANK_EMPTY, LOADSHEET } from '../model.js';
+import { IR_MODE, STROBE_MODE, NOSE_LT, START_FAULT, FUEL_PLANS, centerEmpty, LOADSHEET } from '../model.js';
 
 export function buildOverhead(root, act) {
   const updaters = [];
@@ -14,10 +14,32 @@ export function buildOverhead(root, act) {
     get: () => act.state().gnd.gpu,
     set: v => act.do(s => { s.gnd.gpu = v; }),
   }));
+  add(gnd.body, toggle({
+    label: 'FUEL', onText: '12.0T', offText: '6.3T',
+    get: () => act.state().gnd.fuelPlan === 'CTR',
+    set: v => act.do(s => {
+      // refuelling only with engines shut down
+      if (s.eng.some(e => e.state !== 'off')) return;
+      s.gnd.fuelPlan = v ? 'CTR' : 'WING';
+      s.fob = FUEL_PLANS[s.gnd.fuelPlan].fob;
+    }),
+  }));
+  add(gnd.body, rotary({
+    label: 'START FAULT',
+    positions: START_FAULT,
+    get: () => START_FAULT.indexOf(act.state().gnd.startFault),
+    set: v => act.do(s => { s.gnd.startFault = START_FAULT[v]; }),
+  }));
   const load = document.createElement('div');
   load.className = 'gnd-load';
-  load.innerHTML = `LOADSHEET<br>ZFW ${LOADSHEET.zfw.toFixed(1)} / CG ${LOADSHEET.zfwcg.toFixed(1)}<br>BLOCK ${LOADSHEET.block.toFixed(1)}`;
   gnd.body.appendChild(load);
+  updaters.push({
+    update(s) {
+      load.innerHTML = `LOADSHEET<br>ZFW ${LOADSHEET.zfw.toFixed(1)} / CG ${LOADSHEET.zfwcg.toFixed(1)}` +
+        `<br>BLOCK ${FUEL_PLANS[s.gnd.fuelPlan].block.toFixed(1)}` +
+        `<br>CTR TK ${centerEmpty(s) ? 'EMPTY' : 'FUELED'}`;
+    },
+  });
 
   // --- ADIRS ---
   const adirs = section('ADIRS');
@@ -126,7 +148,7 @@ export function buildOverhead(root, act) {
     add(fuel.body, korry({
       label, top: 'FAULT', bottom: 'OFF', botColor: 'white',
       // centre pumps on an empty centre tank -> low pressure FAULT
-      topLit: s => isCtr && CENTER_TANK_EMPTY && s.fuelPumps[key],
+      topLit: s => isCtr && centerEmpty(s) && s.fuelPumps[key],
       botLit: s => !s.fuelPumps[key],
       onPress: () => act.do(s => { s.fuelPumps[key] = !s.fuelPumps[key]; }),
     }));

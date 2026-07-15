@@ -2,7 +2,7 @@
 // the first unchecked item is "active"; when its predicate becomes true it is
 // checked (sticky in s.ckDone) and the next item becomes active. This keeps
 // shutdown items (e.g. BAT OFF) from self-checking at cold & dark.
-import { ENG_MODE, CLEARANCE } from './model.js';
+import { ENG_MODE, CLEARANCE, centerEmpty } from './model.js';
 
 const wingPumps = s => s.fuelPumps.L1 && s.fuelPumps.L2 && s.fuelPumps.R1 && s.fuelPumps.R2;
 const ctrPumpsOff = s => !s.fuelPumps.C1 && !s.fuelPumps.C2;
@@ -36,7 +36,7 @@ export const PHASES = [
   {
     id: 'beforestart', title: 'BEFORE START', items: [
       { id: 'fuel', label: 'WING FUEL PUMPS (4)', action: 'ON', done: wingPumps },
-      { id: 'ctr', label: 'CTR TK PUMPS (CTR EMPTY)', action: 'OFF', done: ctrPumpsOff },
+      { id: 'ctr', label: 'CTR TK PUMPS', action: 'AS RQRD', done: s => centerEmpty(s) ? ctrPumpsOff(s) : (s.fuelPumps.C1 && s.fuelPumps.C2) },
       { id: 'apum', label: 'APU MASTER SW', action: 'ON', done: s => s.apuMaster },
       { id: 'apus', label: 'APU START ... AVAIL', action: 'START', done: s => s.apu.state === 'avail' },
       { id: 'apub', label: 'APU BLEED', action: 'ON', done: s => s.apuBleed },

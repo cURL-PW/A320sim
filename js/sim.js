@@ -1,5 +1,5 @@
 // Systems simulation. Runs only in the main window at ~10 Hz.
-import { derive, ENG_MODE } from './model.js';
+import { derive, ENG_MODE, centerEmpty } from './model.js';
 
 // Move v toward target at |rate| units per second.
 function approach(v, target, rate, dt) {
@@ -31,6 +31,43 @@ export function tick(s, dt) {
   // Fuel burn (very rough): engines + APU
   const burn = (s.eng[0].ff + s.eng[1].ff + (s.apu.n > 10 ? 120 : 0)) / 3600;
   s.fob = Math.max(0, s.fob - burn * dt);
+
+  tickAlerts(s);
+}
+
+// ---- ECAM alerting -------------------------------------------------------
+export function computeAlerts(s) {
+  const list = [];
+  for (let i = 0; i < 2; i++) {
+    const e = s.eng[i];
+    if (e.state !== 'off' && e.egt > 725) {
+      list.push({ key: `eng${i}-egt`, text: `ENG ${i + 1} EGT OVERLIMIT`, level: 'warn' });
+    }
+    if (e.state === 'starting' && e.fault === 'hung' && e.stalled > 4) {
+      list.push({ key: `eng${i}-start`, text: `ENG ${i + 1} START FAULT`, level: 'caut' });
+    }
+  }
+  if ((s.fuelPumps.C1 || s.fuelPumps.C2) && centerEmpty(s)) {
+    list.push({ key: 'ctr-lopr', text: 'FUEL CTR TK PUMP LO PR', level: 'caut' });
+  }
+  if (s.toConfig === 'warning') {
+    list.push({ key: 'tocfg', text: 'CONFIG FLAPS NOT IN T.O RANGE', level: 'warn' });
+  }
+  return list;
+}
+
+function tickAlerts(s) {
+  const alerts = computeAlerts(s);
+  const prev = new Set(s.activeAlerts.map(a => a.key));
+  for (const a of alerts) {
+    if (!prev.has(a.key)) {
+      if (a.level === 'warn') s.ackWarn = false;
+      else s.ackCaut = false;
+    }
+  }
+  if (!alerts.some(a => a.level === 'warn')) s.ackWarn = true;
+  if (!alerts.some(a => a.level === 'caut')) s.ackCaut = true;
+  s.activeAlerts = alerts;
 }
 
 function tickApu(s, d, dt) {
@@ -94,23 +131,46 @@ function tickEngines(s, d, dt) {
     const startPermitted = d.acPower && bleedOk && ENG_MODE[s.engModeSel] === 'IGN/START';
 
     if (s.engMaster[i]) {
-      if (e.state === 'off' && startPermitted) e.state = 'starting';
+      if (e.state === 'off' && startPermitted) {
+        e.state = 'starting';
+        e.fault = pickStartFault(s);
+        e.stalled = 0;
+      }
       if (e.state === 'starting') {
         if (!d.acPower || !bleedOk) { e.state = 'spooldown'; continue; }
         e.starter = e.n2 < 50;
         e.ignition = e.n2 >= 16 && e.n2 < 55;
-        const rate = e.n2 < 25 ? 2.8 : e.n2 < 50 ? 2.2 : 1.6;
-        e.n2 = approach(e.n2, IDLE.n2, rate, dt);
-        if (e.n2 >= 16) {
-          e.ff = approach(e.ff, 120 + e.n2 * 3, 60, dt);
-          const egtTarget = e.n2 < 45 ? 100 + e.n2 * 12 : 620;
-          e.egt = approach(e.egt, egtTarget, 55, dt);
+
+        if (e.fault === 'hung' && e.n2 >= 35) {
+          // hung start: N2 stops accelerating, EGT sits high — abort with MASTER OFF
+          e.stalled += dt;
+          e.ff = approach(e.ff, 180, 40, dt);
+          e.egt = approach(e.egt, 520, 25, dt);
+        } else if (e.fault === 'hot' && e.n2 >= 20) {
+          // hot start: EGT runs away past the 725°C start limit — abort quickly
+          const rate = 1.2;
+          e.n2 = approach(e.n2, IDLE.n2, rate, dt);
+          e.ff = approach(e.ff, 400 + e.n2 * 4, 120, dt);
+          e.egt = approach(e.egt, 1080, 150, dt);
+        } else {
+          const rate = e.n2 < 25 ? 2.8 : e.n2 < 50 ? 2.2 : 1.6;
+          e.n2 = approach(e.n2, IDLE.n2, rate, dt);
+          if (e.n2 >= 16) {
+            e.ff = approach(e.ff, 120 + e.n2 * 3, 60, dt);
+            const egtTarget = e.n2 < 45 ? 100 + e.n2 * 12 : 620;
+            e.egt = approach(e.egt, egtTarget, 55, dt);
+          }
         }
         e.n1 = approach(e.n1, e.n2 * 0.28, 1.2, dt);
         if (e.n2 >= IDLE.n2 - 0.5) {
-          e.state = 'running';
-          e.starter = false;
-          e.ignition = false;
+          // a hot start left to run never stabilises cleanly; treat reaching
+          // idle N2 as start complete only when EGT is sane
+          if (e.egt < 725) {
+            e.state = 'running';
+            e.starter = false;
+            e.ignition = false;
+            e.fault = null;
+          }
         }
       } else if (e.state === 'running') {
         e.n1 = approach(e.n1, IDLE.n1, 1.5, dt);
@@ -123,6 +183,8 @@ function tickEngines(s, d, dt) {
       e.state = 'spooldown';
       e.starter = false;
       e.ignition = false;
+      e.fault = null;
+      e.stalled = 0;
       e.n1 = approach(e.n1, 0, 2.5, dt);
       e.n2 = approach(e.n2, 0, 3.5, dt);
       e.ff = approach(e.ff, 0, 300, dt);
@@ -130,6 +192,20 @@ function tickEngines(s, d, dt) {
       if (e.n2 <= 0.2) { e.state = 'off'; e.n1 = 0; e.n2 = 0; e.ff = 0; }
     }
   }
+}
+
+// HOT/HUNG trigger once then reset (so the retry after aborting succeeds);
+// RND stays armed and rolls the dice on every start.
+function pickStartFault(s) {
+  const f = s.gnd.startFault;
+  if (f === 'HOT') { s.gnd.startFault = 'OFF'; return 'hot'; }
+  if (f === 'HUNG') { s.gnd.startFault = 'OFF'; return 'hung'; }
+  if (f === 'RND') {
+    const r = Math.random();
+    if (r < 0.25) return 'hot';
+    if (r < 0.45) return 'hung';
+  }
+  return null;
 }
 
 // Which SD page should the lower ECAM show?

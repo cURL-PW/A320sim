@@ -39,12 +39,14 @@ function gauge(parent, { cx, cy, r, max = 100, a0 = 150, a1 = 390, redFrom = nul
   const needle = el('line', { x1: cx, y1: cy, x2: cx, y2: cy, class: 'needle' }, g);
   const box = el('rect', { x: cx - 34, y: cy + r * 0.15, width: 68, height: 22, class: 'valbox' }, g);
   const val = txt(g, cx, cy + r * 0.15 + 17, '0.0', 'g big');
-  return v => {
+  return (v, over = false) => {
     const a = a0 + Math.min(1, Math.max(0, v / max)) * (a1 - a0);
     const [x2, y2] = pt(cx, cy, r - 4, a);
     needle.setAttribute('x2', x2.toFixed(1));
     needle.setAttribute('y2', y2.toFixed(1));
+    needle.setAttribute('class', over ? 'needle-r' : 'needle');
     val.textContent = v.toFixed(decimals);
+    val.setAttribute('class', (over ? 'r' : 'g') + ' big');
     void box;
   };
 }
@@ -106,7 +108,7 @@ export function buildEwd(root) {
       for (let i = 0; i < 2; i++) {
         const e = s.eng[i];
         setN1[i](e.n1);
-        setEgt[i](e.egt);
+        setEgt[i](e.egt, e.egt > 725);
         n2Txt[i].textContent = e.n2.toFixed(1);
         ffTxt[i].textContent = String(Math.round(e.ff / 10) * 10);
         ign[i].textContent = e.ignition ? 'IGN' : '';
@@ -130,12 +132,12 @@ export function buildEwd(root) {
         t.setAttribute('class', (rm[i] ? rm[i][1] : 'g') + ' small');
       });
 
-      const lm = [];
+      // warnings/cautions first (red/amber), then memos
+      const lm = s.activeAlerts.map(a => [a.text, a.level === 'warn' ? 'r' : 'a']);
       const starting = s.eng.some(e => e.state === 'starting');
       if (starting) lm.push(['ENG START', 'g']);
       if (s.toConfig === 'normal') lm.push(['T.O CONFIG NORMAL', 'g']);
-      if (s.toConfig === 'warning') lm.push(['CONFIG FLAPS NOT IN T.O RANGE', 'a']);
-      if (!d.anyEngRun && !starting && d.screensOn) lm.push(['NORMAL', 'g']);
+      if (!d.anyEngRun && !starting && d.screensOn && !lm.length) lm.push(['NORMAL', 'g']);
       leftMemo.forEach((t, i) => {
         t.textContent = lm[i] ? lm[i][0] : '';
         t.setAttribute('class', lm[i] ? lm[i][1] : 'g');

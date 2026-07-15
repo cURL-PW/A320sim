@@ -4,9 +4,11 @@ Fenix A320 の地上手順(Cold & Dark → エンジンスタート → シャ�
 ブラウザで練習できる 2D パネルシミュレータです。iPad mini のタッチ操作を想定しています。
 
 - ビルド不要の静的サイト(HTML + CSS + Vanilla JS)
-- パネル: オーバーヘッド / ECAM(E/WD + SD) / ペデスタル
+- パネル: オーバーヘッド / FCU / ECAM(E/WD + SD) / ペデスタル
 - MCDU は**別窓**(`cdu.html`)。BroadcastChannel でメイン窓とリアルタイム同期
 - 手順チェックリスト内蔵。スイッチ操作と連動して自動でチェックが入ります
+- ECAM 警告体系(MASTER WARN/CAUT + チャイム)と異常始動(ホット/ハングスタート)を再現
+- サウンドは Web Audio 合成(クリック音・APU/エンジンスプール音・チャイム)。ヘッダの 🔊 で消音可
 - 飛行は再現しません(地上手順のみ)
 
 ## 使い方
@@ -63,6 +65,25 @@ PC では CDU ボタンでポップアップ窓が開きます。
 ※ ADIRS のアライメントは実機の約 10 分を 30 秒に短縮しています(MCDU INIT ページの
 `ALIGN IRS>` で即時完了も可能)。エンジン始動には AC 電源と APU ブリードが必要です。
 パックは実機 SOP どおり「APU BLEED 後に ON → 始動前に OFF → 始動後に ON」の 3 段階で操作します。
+
+## 異常始動の練習
+
+GND SERVICES の **START FAULT** セレクタで始動故障を仕込めます。
+
+- **HOT** — 次の始動でホットスタート(EGT が始動リミット 725°C を超えて急上昇)。EGT 赤表示 +
+  「ENG x EGT OVERLIMIT」赤警告 + MASTER WARN 点滅 + 連続チャイム(CRC)。**即 ENG MASTER OFF** で中断
+- **HUNG** — ハングスタート(N2 が約 35% で停滞)。数秒後に「ENG x START FAULT」アンバー警告 +
+  MASTER CAUT + シングルチャイム。同じく MASTER OFF で中断
+- **RND** — 始動ごとに一定確率でホット/ハングが発生(本番練習用)
+- HOT/HUNG はワンショット(発動後 OFF に戻る)なので、中断 → 再始動で正常に始動できます
+
+MASTER WARN / MASTER CAUT(FCU 左)を押すとチャイム・点灯が消えます(警告文は原因が解消するまで E/WD に残ります)。
+
+## 燃料プラン
+
+GND SERVICES の **FUEL** トグルで 6.3t(ウィングのみ)⇄ 12.0t(センタータンクあり)を切替できます(給油はエンジン停止中のみ)。
+センターに燃料がある場合、BEFORE START の CTR ポンプは「OFF のまま」ではなく **ON** が正解になります。
+空のセンタータンクでポンプを回すと FAULT 点灯 + 「FUEL CTR TK PUMP LO PR」コーションが出ます。
 
 ## 構成
 

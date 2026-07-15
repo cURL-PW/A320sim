@@ -402,6 +402,32 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
   border-radius: 4px;
 }
 
+/* ---------------- master warn / caut ---------------- */
+.fcu-attn { flex-direction: row; gap: 8px; min-width: 0; }
+.attn {
+  width: 66px;
+  height: 56px;
+  white-space: pre-line;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #3a3f45;
+  background: #191d22;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+.attn-warn.lit {
+  color: #fff;
+  background: #c81e1e;
+  box-shadow: 0 0 12px #ff3b30aa;
+  animation: annun-flash 0.6s steps(2) infinite;
+}
+.attn-caut.lit {
+  color: #200f00;
+  background: #ffb000;
+  box-shadow: 0 0 12px #ffb000aa;
+}
+
 /* ---------------- ground services / F-CTL check ---------------- */
 .gnd-load {
   font-family: "SF Mono", Menlo, Consolas, monospace;
@@ -465,6 +491,8 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 .ecam-screen .outline { fill: none; stroke: #aeb9c4; stroke-width: 2; }
 .ecam-screen .door-ok { fill: #35e08a; }
 .ecam-screen .ptr { fill: #35e08a; }
+.ecam-screen .r { fill: #ff4d4d; }
+.ecam-screen .needle-r { stroke: #ff4d4d; stroke-width: 3; }
 
 .ecam-btns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
 .ecam-btns button {

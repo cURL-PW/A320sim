@@ -40,6 +40,13 @@ export function buildFcu(root, act) {
 
   const row = div('fcu-row', root);
 
+  // MASTER WARN / CAUT (glareshield attention-getters; press to acknowledge)
+  const warnCell = div('fcu-cell fcu-attn', row);
+  const mw = attnLight(warnCell, 'MASTER\nWARN', 'warn',
+    () => act.do(s => { s.ackWarn = true; }));
+  const mc = attnLight(warnCell, 'MASTER\nCAUT', 'caut',
+    () => act.do(s => { s.ackCaut = true; }));
+
   // SPD
   const spd = windowBox(row, 'SPD');
   const spdBtn = pushKnob(spd.wrap, 'SPD managed', () =>
@@ -85,8 +92,20 @@ export function buildFcu(root, act) {
       baro.win.textContent = !on ? '' : s.fcu.baroMode === 'STD' ? 'STD' : String(s.fcu.baro);
       spdBtn.classList.toggle('managed', s.fcu.spdManaged);
       hdgBtn.classList.toggle('managed', s.fcu.hdgManaged);
+      mw.classList.toggle('lit', d.dcPower && !s.ackWarn);
+      mc.classList.toggle('lit', d.dcPower && !s.ackCaut);
     },
   };
+}
+
+function attnLight(parent, label, kind, onPress) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'attn attn-' + kind;
+  b.textContent = label;
+  b.addEventListener('click', onPress);
+  parent.appendChild(b);
+  return b;
 }
 
 function pushKnob(parent, aria, onPush) {

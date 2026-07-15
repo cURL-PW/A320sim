@@ -8,9 +8,16 @@ export const IR_MODE = ['OFF', 'NAV', 'ATT'];
 export const STROBE_MODE = ['OFF', 'AUTO', 'ON'];
 export const XPDR_MODE = ['STBY', 'AUTO', 'TA/RA'];
 
-// The default fuel load (6264 kg) fits in the wing tanks — centre tank empty.
-// Running centre pumps on an empty tank lights their FAULT (low pressure).
-export const CENTER_TANK_EMPTY = true;
+// Fuel plans selectable from GND SERVICES (EFB): wing-tanks-only, or a heavier
+// load that also fills the centre tank (changes the CTR pump procedure).
+// Running centre pumps on an empty centre tank lights their FAULT (low pressure).
+export const FUEL_PLANS = {
+  WING: { fob: 6264, block: 6.3 },
+  CTR: { fob: 12000, block: 12.0 },
+};
+export const centerEmpty = s => s.gnd.fuelPlan !== 'CTR';
+
+export const START_FAULT = ['OFF', 'RND', 'HOT', 'HUNG'];
 
 export const FLAP_POS = ['0', '1', '2', '3', 'FULL'];
 export const NOSE_LT = ['OFF', 'TAXI', 'T.O'];
@@ -19,12 +26,16 @@ export const AUTO_BRK = ['OFF', 'LO', 'MED', 'MAX'];
 // Fixed "clearance" for the training scenario (shown on the FCU panel):
 // initial altitude, local QNH, squawk. The load sheet mirrors the EFB.
 export const CLEARANCE = { initAlt: 6000, qnh: 1006, squawk: '2000' };
-export const LOADSHEET = { zfw: 54.3, zfwcg: 28.0, block: 6.3 };
+export const LOADSHEET = { zfw: 54.3, zfwcg: 28.0 };
 
 export function coldAndDark() {
   return {
     // Ground services (EFB stand-in)
-    gnd: { gpu: false },      // GPU must be connected before EXT PWR shows AVAIL
+    gnd: {
+      gpu: false,             // GPU must be connected before EXT PWR shows AVAIL
+      fuelPlan: 'WING',       // see FUEL_PLANS
+      startFault: 'OFF',      // OFF | RND | HOT | HUNG (HOT/HUNG are one-shot)
+    },
 
     // ELEC
     bat1: false,
@@ -90,6 +101,11 @@ export function coldAndDark() {
     },
     toConfig: null,           // null | 'normal' | 'warning'
 
+    // ECAM alerting: active alerts + master light acknowledge state
+    activeAlerts: [],         // [{ key, text, level: 'warn'|'caut' }]
+    ackWarn: true,            // true = no unacknowledged warning (light out)
+    ackCaut: true,
+
     // Engines
     engModeSel: 1,            // index into ENG_MODE
     engMaster: [false, false],
@@ -121,7 +137,11 @@ export function coldAndDark() {
 }
 
 export function engineOff() {
-  return { state: 'off', n1: 0, n2: 0, egt: 10, ff: 0, ignition: false, starter: false };
+  return {
+    state: 'off', n1: 0, n2: 0, egt: 10, ff: 0, ignition: false, starter: false,
+    fault: null,              // null | 'hot' | 'hung' (assigned at start initiation)
+    stalled: 0,               // seconds N2 has been stuck (hung start detection)
+  };
 }
 
 // Values derived from state each tick. Kept separate so both windows can
