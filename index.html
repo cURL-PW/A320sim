@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0f12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>A320 Procedure Simulator</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2314171b'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='%2335e08a'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/main.css">
@@ -13,6 +17,11 @@
   <div class="brand">A320<span>PROC SIM</span></div>
   <div id="phase">COCKPIT PREPARATION</div>
   <div class="spacer"></div>
+  <select id="state-sel" aria-label="panel state">
+    <option value="" selected>STATE ▾</option>
+    <option value="colddark">COLD &amp; DARK</option>
+    <option value="turnaround">TURN-AROUND</option>
+  </select>
   <button id="btn-sound" type="button">🔊</button>
   <button id="btn-cdu" type="button">CDU</button>
   <button id="btn-checklist" type="button">CHECKLIST</button>
@@ -46,10 +55,21 @@
 <aside id="checklist">
   <div class="ck-head">
     <span>PROCEDURE</span>
+    <button id="btn-exam" type="button">EXAM</button>
     <button id="btn-ck-close" type="button">✕</button>
   </div>
+  <div id="exam-status" style="display:none"></div>
   <div id="checklist-body"></div>
 </aside>
+
+<div id="exam-result" style="display:none">
+  <div class="exam-card">
+    <h2>EXAM RESULT</h2>
+    <div id="exam-grade"></div>
+    <div id="exam-detail"></div>
+    <button id="exam-close" type="button">閉じる</button>
+  </div>
+</div>
 
 <script type="module" src="js/main.js"></script>
 </body>

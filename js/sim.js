@@ -63,6 +63,7 @@ function tickAlerts(s) {
     if (!prev.has(a.key)) {
       if (a.level === 'warn') s.ackWarn = false;
       else s.ackCaut = false;
+      if (s.exam && s.exam.started && !s.exam.result) s.exam.alerts++;
     }
   }
   if (!alerts.some(a => a.level === 'warn')) s.ackWarn = true;

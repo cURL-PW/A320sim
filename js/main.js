@@ -1,23 +1,43 @@
 // Main window entry: owns the state, runs the simulation, broadcasts snapshots.
-import { coldAndDark, derive } from './model.js';
+import { coldAndDark, turnAround, restoreState, derive, SCHEMA_VERSION, STORAGE_KEY } from './model.js';
 import { tick } from './sim.js';
 import { openChannel } from './sync.js';
 import { buildOverhead } from './panels/overhead.js';
 import { buildPedestal } from './panels/pedestal.js';
 import { buildFcu } from './panels/fcu.js';
 import { buildEwd, buildSd } from './ecam.js';
-import { buildChecklist, tickChecklist, currentPhase } from './checklist.js';
+import { buildChecklist, tickChecklist, currentPhase, activeItem, progress } from './checklist.js';
 import { handleCduKey } from './cdu_logic.js';
 import { createSound } from './sound.js';
 
-let state = coldAndDark();
+let state = loadState() || coldAndDark();
+
+// --- persistence (survives reload / Safari tab eviction) ---
+function loadState() {
+  try { return restoreState(JSON.parse(localStorage.getItem(STORAGE_KEY))); }
+  catch { return null; }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: SCHEMA_VERSION, state })); }
+  catch { /* private mode / quota — persistence is best-effort */ }
+}
+setInterval(saveState, 2000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); });
 
 const sound = createSound();
 document.addEventListener('pointerdown', () => sound.ensure(), { capture: true });
 
 const act = {
   state: () => state,
-  do(fn) { sound.click(); fn(state); refresh(); },
+  do(fn) {
+    sound.click();
+    if (state.exam && !state.exam.result) {
+      state.exam.started = true;
+      state.exam.ops++;
+    }
+    fn(state);
+    refresh();
+  },
 };
 
 const channel = openChannel(msg => {
@@ -52,9 +72,56 @@ document.getElementById('btn-cdu').addEventListener('click', () => {
 document.getElementById('btn-reset').addEventListener('click', () => {
   if (confirm('Cold & Dark 状態にリセットします。よろしいですか?')) {
     state = coldAndDark();
+    saveState();
     refresh();
   }
 });
+const stateSel = document.getElementById('state-sel');
+stateSel.addEventListener('change', () => {
+  const v = stateSel.value;
+  stateSel.value = '';
+  if (v === 'colddark' && confirm('Cold & Dark 状態から開始します。よろしいですか?')) {
+    state = coldAndDark();
+  } else if (v === 'turnaround' && confirm('ターンアラウンド状態(外部電源・ADIRS アライン済み)から開始します。よろしいですか?')) {
+    state = turnAround();
+  } else return;
+  saveState();
+  refresh();
+});
+
+// --- exam mode: hide the checklist, time the flow, grade at the end ---
+const EXAM_PAR_OPS = 85;
+const examBtn = document.getElementById('btn-exam');
+const examStatus = document.getElementById('exam-status');
+const examResult = document.getElementById('exam-result');
+examBtn.addEventListener('click', () => {
+  if (state.exam) {
+    if (confirm('試験モードを中止して手順ガイドに戻りますか?')) { state.exam = null; refresh(); }
+    return;
+  }
+  if (!confirm('試験モード: チェックリストを隠して Cold & Dark から全手順を実施します。\n所要時間・操作数・警告発生数で採点されます。開始しますか?')) return;
+  state = coldAndDark();
+  state.exam = { started: false, time: 0, ops: 0, alerts: 0, result: null };
+  saveState();
+  refresh();
+});
+document.getElementById('exam-close').addEventListener('click', () => {
+  state.exam = null;
+  refresh();
+});
+
+function gradeExam(e) {
+  const ratio = e.ops / EXAM_PAR_OPS;
+  if (e.alerts === 0 && ratio <= 1.1) return 'S';
+  if (e.alerts <= 1 && ratio <= 1.3) return 'A';
+  if (e.alerts <= 3 && ratio <= 1.6) return 'B';
+  return 'C';
+}
+
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 const sndBtn = document.getElementById('btn-sound');
 sndBtn.addEventListener('click', () => {
   sound.setMuted(!sound.muted);
@@ -72,6 +139,26 @@ function refresh() {
   checklist.update(state);
   const ph = currentPhase(state);
   phaseEl.textContent = ph ? ph.title : 'FLOW COMPLETE';
+
+  // exam mode presentation + completion
+  const exam = state.exam;
+  drawer.classList.toggle('exam', !!exam);
+  examBtn.textContent = exam ? 'EXAM中止' : 'EXAM';
+  if (exam) {
+    const p = progress(state);
+    examStatus.textContent = `${ph ? ph.title : 'COMPLETE'} — ${p.done}/${p.total} · ` +
+      `${fmtTime(exam.time)} · 操作 ${exam.ops} · 警告 ${exam.alerts}`;
+    if (!exam.result && exam.started && !activeItem(state)) {
+      exam.result = {
+        grade: gradeExam(exam), time: exam.time, ops: exam.ops, alerts: exam.alerts,
+      };
+      document.getElementById('exam-grade').textContent = exam.result.grade;
+      document.getElementById('exam-detail').textContent =
+        `所要時間 ${fmtTime(exam.result.time)} · 操作数 ${exam.result.ops}(目安 ${EXAM_PAR_OPS})· 警告発生 ${exam.result.alerts} 回`;
+    }
+  }
+  examResult.style.display = exam && exam.result ? 'flex' : 'none';
+  examStatus.style.display = exam ? '' : 'none';
 
   sound.update(state, d);
   if (!state.ackCaut && prevAckCaut) sound.chime();  // new caution -> single chime
@@ -91,10 +178,16 @@ setInterval(() => {
   last = now;
   tick(state, dt * speed);
   tickChecklist(state);
+  if (state.exam && state.exam.started && !state.exam.result) state.exam.time += dt;
   refresh();
 }, 100);
 
 refresh();
+
+// PWA service worker (skip on localhost so development stays uncached)
+if ('serviceWorker' in navigator && !/^(localhost|127\.)/.test(location.hostname)) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 
 // test/debug hook
 window.__state = () => state;

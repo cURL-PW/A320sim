@@ -116,6 +116,11 @@ export function currentPhase(s) {
   return PHASES.find(p => p.id === it.phase);
 }
 
+export function progress(s) {
+  const done = ALL_ITEMS.filter(it => s.ckDone[it.id]).length;
+  return { done, total: ALL_ITEMS.length };
+}
+
 // --- DOM ---
 export function buildChecklist(root, act) {
   const items = new Map();

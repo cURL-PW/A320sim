@@ -2,6 +2,8 @@
 // The CDU window only receives snapshots and sends key events back.
 
 export const CHANNEL_NAME = 'a320sim-v1';
+export const SCHEMA_VERSION = 2;   // bump when the state shape changes
+export const STORAGE_KEY = 'a320sim-state';
 
 export const ENG_MODE = ['CRANK', 'NORM', 'IGN/START'];
 export const IR_MODE = ['OFF', 'NAV', 'ATT'];
@@ -133,7 +135,41 @@ export function coldAndDark() {
 
     // Checklist progress: itemId -> true (sticky)
     ckDone: {},
+
+    // Exam mode: null, or { started, time, ops, alerts, result }
+    exam: null,
   };
+}
+
+// Turn-around state: aircraft powered on external power, ADIRS aligned,
+// engines shut down — start practising from BEFORE START / shutdown.
+export function turnAround() {
+  const s = coldAndDark();
+  s.gnd.gpu = true;
+  s.bat1 = s.bat2 = true;
+  s.extPwrOn = true;
+  s.acTime = 10; // skip the display self test
+  for (const ir of s.adirs) { ir.sel = 'NAV'; ir.align = 999; ir.aligned = true; }
+  return s;
+}
+
+// Restore a persisted snapshot on top of current defaults, so newly added
+// fields keep their default when loading an older save.
+export function restoreState(saved) {
+  if (!saved || saved.v !== SCHEMA_VERSION) return null;
+  return mergeInto(coldAndDark(), saved.state);
+}
+
+function mergeInto(base, over) {
+  if (Array.isArray(base) || typeof base !== 'object' || base === null ||
+      typeof over !== 'object' || over === null || Array.isArray(over) !== Array.isArray(base)) {
+    return over === undefined ? base : over;
+  }
+  const out = { ...base };
+  for (const k of Object.keys(over)) {
+    out[k] = k in base ? mergeInto(base[k], over[k]) : over[k];
+  }
+  return out;
 }
 
 export function engineOff() {
