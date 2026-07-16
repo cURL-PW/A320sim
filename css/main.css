@@ -680,6 +680,46 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
   letter-spacing: 1px;
 }
 
+/* ---------------- CDU popup ---------------- */
+#cdu-popup {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  z-index: 35;
+  background: #23272c;
+  border-left: 1px solid #3b444e;
+  transform: translateX(100%);
+  transition: transform 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px #00000080;
+}
+#cdu-popup.open { transform: translateX(0); }
+.cdu-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #8b98a5;
+  border-bottom: 1px solid #3b444e;
+}
+.cdu-pop-head span { flex: 1; }
+.cdu-pop-head button {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 12px;
+  color: #cdd6de;
+  background: #2c333b;
+  border: 1px solid #3b444e;
+  border-radius: 6px;
+}
+#cdu-popup-body { overflow-y: auto; flex: 1; }
+
 /* ---------------- exam mode ---------------- */
 #btn-exam {
   min-height: 36px;

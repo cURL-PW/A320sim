@@ -10,6 +10,7 @@ import { buildPfd } from './pfd.js';
 import { buildNd } from './nd.js';
 import { buildChecklist, tickChecklist, currentPhase, activeItem, progress } from './checklist.js';
 import { handleCduKey } from './cdu_logic.js';
+import { buildCduUnit } from './cdu_ui.js';
 import { createSound } from './sound.js';
 
 let state = loadState() || coldAndDark();
@@ -70,7 +71,22 @@ document.getElementById('btn-checklist').addEventListener('click', () => {
 document.getElementById('btn-ck-close').addEventListener('click', () => {
   drawer.classList.remove('open');
 });
+// CDU opens as an in-app popup (works in the PWA where window.open cannot);
+// a separate window stays available via the ↗ link for Split View users.
+const cduPopup = document.getElementById('cdu-popup');
+let cduUnit = null;
 document.getElementById('btn-cdu').addEventListener('click', () => {
+  if (!cduUnit) {
+    cduUnit = buildCduUnit(document.getElementById('cdu-popup-body'),
+      key => act.do(s => handleCduKey(s, key)));
+  }
+  cduPopup.classList.toggle('open');
+  refresh();
+});
+document.getElementById('cdu-popup-close').addEventListener('click', () => {
+  cduPopup.classList.remove('open');
+});
+document.getElementById('cdu-popup-ext').addEventListener('click', () => {
   window.open('cdu.html', 'a320cdu', 'width=420,height=640');
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
@@ -145,6 +161,8 @@ function refresh() {
   nd.update(state, d);
   document.getElementById('flightdeck').style.display =
     state.gnd.program === 'FULL' ? '' : 'none';
+
+  if (cduUnit && cduPopup.classList.contains('open')) cduUnit.draw(state);
 
   // speak queued flight callouts
   const q = state.flight.sayQueue;
