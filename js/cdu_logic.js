@@ -1,5 +1,6 @@
 // MCDU key handling. Runs in the main window (owner of the state); the CDU
 // window only sends key ids.
+import { findScenarioByRoute, getScenario } from './navdata.js';
 
 const CHAR_KEYS = /^[A-Z0-9/.+\-]$/;
 
@@ -19,13 +20,14 @@ export function handleCduKey(s, key) {
     case 'MENU': c.page = 'MENU'; return;
     case 'INIT': c.page = 'INIT'; return;
     case 'PERF': c.page = 'PERF'; return;
+    case 'FPLN': c.page = 'FPLN'; return;
     case 'DATA': c.page = 'STATUS'; return;
     case 'LEFT': case 'RIGHT': // slew between INIT A <-> INIT B
       if (c.page === 'INIT') c.page = 'INITB';
       else if (c.page === 'INITB') c.page = 'INIT';
       return;
     case 'UP': case 'DOWN': return;
-    case 'FPLN': case 'PROG': case 'RAD':
+    case 'PROG': case 'RAD':
     case 'DIR': case 'FUEL': case 'SEC': case 'ATC': case 'AIRPORT':
       c.msg = 'NOT ALLOWED'; return;
   }
@@ -41,10 +43,13 @@ function handleLsk(s, key) {
   }
   if (c.page === 'INIT') {
     switch (key) {
-      case 'LSK1R': { // FROM/TO
+      case 'LSK1R': { // FROM/TO — must match a stored scenario (company route)
         const m = c.scratch.match(/^([A-Z]{4})\/([A-Z]{4})$/);
-        if (m) { c.from = m[1]; c.to = m[2]; c.scratch = ''; }
-        else c.msg = 'FORMAT ERROR';
+        if (!m) { c.msg = 'FORMAT ERROR'; return; }
+        const sc = findScenarioByRoute(m[1], m[2]);
+        if (!sc) { c.msg = 'NOT IN DATA BASE'; return; }
+        s.gnd.scenario = sc.id;
+        c.from = m[1]; c.to = m[2]; c.scratch = '';
         return;
       }
       case 'LSK3L': { // FLT NBR
@@ -128,6 +133,49 @@ function handleLsk(s, key) {
         return;
       }
     }
+    c.msg = 'NOT ALLOWED';
+    return;
+  }
+  if (c.page === 'FPLN') {
+    if (!c.from) { c.msg = 'INIT FROM/TO FIRST'; return; }
+    if (key === 'LSK1L') { c.page = 'DEPARTURE'; c.tmpy = null; return; }
+    if (key === 'LSK6L') { c.page = 'ARRIVAL'; c.tmpy = null; return; }
+    c.msg = 'NOT ALLOWED';
+    return;
+  }
+  if (c.page === 'DEPARTURE') {
+    const sc = getScenario(s);
+    if (key === 'LSK1L') { c.tmpy = { ...(c.tmpy || {}), rwy: sc.from.rwy }; return; }
+    if (key === 'LSK2L') {
+      if (!c.tmpy || !c.tmpy.rwy) { c.msg = 'SELECT RWY FIRST'; return; }
+      c.tmpy.sid = sc.from.sid;
+      return;
+    }
+    if (key === 'LSK6R') { // INSERT
+      if (c.tmpy && c.tmpy.rwy && c.tmpy.sid) {
+        c.dep = c.tmpy; c.tmpy = null; c.page = 'FPLN';
+      } else c.msg = 'SELECT RWY AND SID';
+      return;
+    }
+    if (key === 'LSK6L') { c.tmpy = null; c.page = 'FPLN'; return; } // RETURN
+    c.msg = 'NOT ALLOWED';
+    return;
+  }
+  if (c.page === 'ARRIVAL') {
+    const sc = getScenario(s);
+    if (key === 'LSK1L') { c.tmpy = { ...(c.tmpy || {}), appr: sc.to.appr }; return; }
+    if (key === 'LSK2L') {
+      if (!c.tmpy || !c.tmpy.appr) { c.msg = 'SELECT APPR FIRST'; return; }
+      c.tmpy.star = sc.to.star;
+      return;
+    }
+    if (key === 'LSK6R') { // INSERT
+      if (c.tmpy && c.tmpy.appr && c.tmpy.star) {
+        c.arr = c.tmpy; c.tmpy = null; c.page = 'FPLN';
+      } else c.msg = 'SELECT APPR AND STAR';
+      return;
+    }
+    if (key === 'LSK6L') { c.tmpy = null; c.page = 'FPLN'; return; } // RETURN
     c.msg = 'NOT ALLOWED';
     return;
   }

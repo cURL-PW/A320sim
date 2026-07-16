@@ -1,8 +1,10 @@
 // Shared state model — single source of truth lives in the main window.
 // The CDU window only receives snapshots and sends key events back.
 
+import { SCENARIOS } from './navdata.js';
+
 export const CHANNEL_NAME = 'a320sim-v1';
-export const SCHEMA_VERSION = 2;   // bump when the state shape changes
+export const SCHEMA_VERSION = 3;   // bump when the state shape changes
 export const STORAGE_KEY = 'a320sim-state';
 
 export const ENG_MODE = ['CRANK', 'NORM', 'IGN/START'];
@@ -25,10 +27,9 @@ export const FLAP_POS = ['0', '1', '2', '3', 'FULL'];
 export const NOSE_LT = ['OFF', 'TAXI', 'T.O'];
 export const AUTO_BRK = ['OFF', 'LO', 'MED', 'MAX'];
 
-// Fixed "clearance" for the training scenario (shown on the FCU panel):
-// initial altitude, local QNH, squawk. The load sheet mirrors the EFB.
-export const CLEARANCE = { initAlt: 6000, qnh: 1006, squawk: '2000' };
-export const LOADSHEET = { zfw: 54.3, zfwcg: 28.0 };
+// Clearance / load sheet come from the active scenario (single one for now).
+export const CLEARANCE = SCENARIOS[0].clearance;
+export const LOADSHEET = SCENARIOS[0].loadsheet;
 
 export function coldAndDark() {
   return {
@@ -37,6 +38,8 @@ export function coldAndDark() {
       gpu: false,             // GPU must be connected before EXT PWR shows AVAIL
       fuelPlan: 'WING',       // see FUEL_PLANS
       startFault: 'OFF',      // OFF | RND | HOT | HUNG (HOT/HUNG are one-shot)
+      scenario: SCENARIOS[0].id,
+      program: 'FULL',        // FULL = fly the route | GROUND = ground procedures only
     },
 
     // ELEC
@@ -78,7 +81,7 @@ export function coldAndDark() {
     antiIce: { wing: false, eng1: false, eng2: false },
 
     // EXT LT / SIGNS
-    lights: { beacon: false, navLogo: false, strobe: 'OFF', wing: false, nose: 'OFF', rwyTurnOff: false },
+    lights: { beacon: false, navLogo: false, strobe: 'OFF', wing: false, nose: 'OFF', rwyTurnOff: false, land: false },
     signs: { seatBelts: false, noSmoking: false },
 
     // ATC / transponder
@@ -108,6 +111,27 @@ export function coldAndDark() {
     ackWarn: true,            // true = no unacknowledged warning (light out)
     ackCaut: true,
 
+    // Flight (autoflight-based; the user performs SOP actions only)
+    flight: {
+      phase: 'ground',        // ground|lineup|takeoff|climb|cruise|descent|approach|flare|rollout|taxiin
+      ias: 0, alt: SCENARIOS[0].from.elev, vs: 0, pitch: 0,
+      hdg: SCENARIOS[0].from.hdg, gs: 0,
+      pos: 0,                 // along-track distance flown (nm)
+      thrust: 'IDLE',         // IDLE|CLB|FLX|TOGA
+      rev: false,             // thrust reversers deployed
+      gear: true, gearPos: 1, // lever + animated position
+      ap1: false,
+      appr: false,            // APPR mode armed/active
+      loc: false, gs_cap: false,
+      fma: { thr: '', vert: '', lat: '' },
+      callouts: [],           // fired callouts (also used by tests)
+      lastCallout: '', calloutT: 0,
+      airborne: false,
+      agl: 0,
+      vacated: false,
+      touchdownAt: null,
+    },
+
     // Engines
     engModeSel: 1,            // index into ENG_MODE
     engMaster: [false, false],
@@ -131,6 +155,9 @@ export function coldAndDark() {
       from: null, to: null, fltNbr: null, ci: null, crzFl: null,
       zfw: null, zfwcg: null, block: null,                       // INIT B
       v1: null, vr: null, v2: null, transAlt: null, flapsThs: null, flex: null, // PERF
+      dep: null,               // { rwy, sid } once inserted from DEPARTURE page
+      arr: null,               // { appr, star } once inserted from ARRIVAL page
+      tmpy: null,              // pending selection before INSERT
     },
 
     // Checklist progress: itemId -> true (sticky)

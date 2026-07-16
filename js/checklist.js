@@ -3,6 +3,11 @@
 // checked (sticky in s.ckDone) and the next item becomes active. This keeps
 // shutdown items (e.g. BAT OFF) from self-checking at cold & dark.
 import { ENG_MODE, CLEARANCE, centerEmpty } from './model.js';
+import { getScenario } from './navdata.js';
+import { todPos } from './flight.js';
+
+const PHASE_ORDER = ['ground', 'lineup', 'takeoff', 'climb', 'cruise', 'descent', 'approach', 'flare', 'rollout', 'taxiin'];
+const atLeast = (f, p) => PHASE_ORDER.indexOf(f.phase) >= PHASE_ORDER.indexOf(p);
 
 const wingPumps = s => s.fuelPumps.L1 && s.fuelPumps.L2 && s.fuelPumps.R1 && s.fuelPumps.R2;
 const ctrPumpsOff = s => !s.fuelPumps.C1 && !s.fuelPumps.C2;
@@ -26,6 +31,7 @@ export const PHASES = [
       { id: 'strobe', label: 'STROBE', action: 'AUTO', done: s => s.lights.strobe !== 'OFF' },
       { id: 'signs', label: 'SEAT BELTS / NO SMOKING', action: 'ON', done: s => s.signs.seatBelts && s.signs.noSmoking },
       { id: 'cdu-init', label: 'MCDU INIT A (FROM/TO)', action: 'ENTER', done: s => !!s.cdu.from },
+      { id: 'cdu-fpln', label: 'MCDU F-PLN (SID/STAR)', action: 'INSERT', full: true, done: s => !!s.cdu.dep && !!s.cdu.arr },
       { id: 'cdu-initb', label: 'MCDU INIT B (ZFW/BLOCK)', action: 'ENTER', done: s => !!s.cdu.zfw && !!s.cdu.block },
       { id: 'cdu-perf', label: 'MCDU PERF (V1/VR/V2..)', action: 'ENTER', done: s => !!s.cdu.v1 && !!s.cdu.vr && !!s.cdu.v2 && !!s.cdu.flapsThs && !!s.cdu.transAlt },
       { id: 'fcu-managed', label: 'FCU SPD / HDG', action: 'MANAGED', done: s => s.fcu.spdManaged && s.fcu.hdgManaged },
@@ -70,6 +76,69 @@ export const PHASES = [
       { id: 'tocfg', label: 'T.O CONFIG', action: 'TEST', done: s => s.toConfig === 'normal' },
     ],
   },
+  // ---- flight phases (FULL program only) ----
+  {
+    id: 'taxi', title: 'TAXI', full: true, items: [
+      { id: 'xpdr-tara', label: 'XPDR MODE', action: 'TA/RA', done: s => s.xpdr.mode === 'TA/RA' },
+      { id: 'land-on', label: 'LAND LT', action: 'ON', done: s => s.lights.land },
+      { id: 'packs-to', label: 'PACK 1 + 2 (T.O)', action: 'OFF', done: packsOff },
+      { id: 'parkbrk-off', label: 'PARKING BRAKE', action: 'OFF', done: s => !s.parkBrk },
+      { id: 'lineup', label: 'LINE UP (ND)', action: 'PRESS', done: s => s.flight.phase !== 'ground' },
+    ],
+  },
+  {
+    id: 'takeoff', title: 'TAKEOFF & INITIAL CLIMB', full: true, items: [
+      { id: 'lever-to', label: 'THRUST LEVERS', action: 'FLX', done: s => ['FLX', 'TOGA'].includes(s.flight.thrust) || atLeast(s.flight, 'takeoff') },
+      { id: 'gear-up', label: 'GEAR (POSITIVE CLIMB)', action: 'UP', done: s => !s.flight.gear && s.flight.airborne },
+      { id: 'lever-clb', label: 'THRUST LEVERS (LVR CLB)', action: 'CLB', done: s => s.flight.thrust === 'CLB' },
+      { id: 'flaps0', label: 'FLAPS', action: '0', done: s => s.flapLever === 0 },
+      { id: 'ap1-on', label: 'AP 1', action: 'ON', done: s => s.flight.ap1 },
+      { id: 'packs-on3', label: 'PACK 1 + 2', action: 'ON', done: packsOn },
+    ],
+  },
+  {
+    id: 'climbcrz', title: 'CLIMB & CRUISE', full: true, items: [
+      { id: 'fcu-crz', label: 'FCU ALT', action: 'FL240', done: s => s.fcu.alt === getScenario(s).crzFl * 100 },
+      { id: 'crz', label: 'CRUISE FL240', action: 'REACHED', done: s => atLeast(s.flight, 'cruise') },
+      { id: 'skip-tod', label: 'TIME SKIP → T/D (ND)', action: 'PRESS', done: s => s.flight.pos >= todPos(s) - 4 },
+    ],
+  },
+  {
+    id: 'descent', title: 'DESCENT', full: true, items: [
+      { id: 'fcu-des', label: 'FCU ALT', action: '3000', done: s => s.fcu.alt === 3000 },
+      { id: 'des-init', label: 'DESCENT', action: 'INITIATED', done: s => atLeast(s.flight, 'descent') },
+      { id: 'belts-chk', label: 'SEAT BELTS', action: 'CHECK ON', done: s => s.signs.seatBelts },
+      { id: 'land-chk', label: 'LAND LT', action: 'CHECK ON', done: s => s.lights.land },
+    ],
+  },
+  {
+    id: 'apprch', title: 'APPROACH', full: true, items: [
+      { id: 'appr-arm', label: 'FCU APPR', action: 'ARM', done: s => s.flight.appr },
+      { id: 'flaps1a', label: 'FLAPS', action: '1', done: s => s.flapLever >= 1 },
+      { id: 'flaps2a', label: 'FLAPS', action: '2', done: s => s.flapLever >= 2 },
+      { id: 'gear-dn', label: 'GEAR', action: 'DOWN', done: s => s.flight.gear && s.flight.gearPos >= 1 },
+      { id: 'flaps3a', label: 'FLAPS', action: '3', done: s => s.flapLever >= 3 },
+      { id: 'flapsfa', label: 'FLAPS', action: 'FULL', done: s => s.flapLever === 4 },
+      { id: 'abrk-med', label: 'AUTO BRK', action: 'MED', done: s => s.autoBrk === 'MED' },
+    ],
+  },
+  {
+    id: 'landing', title: 'LANDING & ROLLOUT', full: true, items: [
+      { id: 'retard', label: 'THR LEVERS (RETARD)', action: 'IDLE', done: s => s.flight.thrust === 'IDLE' && atLeast(s.flight, 'flare') },
+      { id: 'rev-max', label: 'REVERSERS', action: 'MAX', done: s => s.flight.rev },
+      { id: 'rev-idle', label: 'AT 70 KT REV', action: 'IDLE', done: s => !s.flight.rev && s.flight.ias < 75 && atLeast(s.flight, 'rollout') },
+      { id: 'ap-off', label: 'AP', action: 'OFF', done: s => !s.flight.ap1 && atLeast(s.flight, 'rollout') },
+      { id: 'vacate', label: 'VACATE RWY (ND)', action: 'PRESS', done: s => s.flight.vacated },
+    ],
+  },
+  {
+    id: 'afterlanding', title: 'AFTER LANDING', full: true, items: [
+      { id: 'al-flaps', label: 'FLAPS', action: '0', done: s => s.flapLever === 0 },
+      { id: 'al-splrs', label: 'GND SPLRS', action: 'DISARM', done: s => !s.spdBrkArmed },
+      { id: 'al-land', label: 'LAND LT', action: 'OFF', done: s => !s.lights.land },
+      { id: 'al-xpdr', label: 'XPDR MODE', action: 'STBY', done: s => s.xpdr.mode === 'STBY' },
+    ],
+  },
   {
     id: 'shutdown', title: 'SHUTDOWN & SECURING', items: [
       { id: 'sd-parkbrk', label: 'PARKING BRAKE', action: 'ON', done: s => s.parkBrk },
@@ -91,13 +160,20 @@ export const PHASES = [
   },
 ];
 
-const ALL_ITEMS = PHASES.flatMap(p => p.items.map(it => ({ ...it, phase: p.id })));
+const ALL_ITEMS = PHASES.flatMap(p =>
+  p.items.map(it => ({ ...it, phase: p.id, full: p.full || it.full })));
+
+// GROUND program skips the flight-only phases/items.
+function itemsFor(s) {
+  if (s.gnd.program === 'GROUND') return ALL_ITEMS.filter(it => !it.full);
+  return ALL_ITEMS;
+}
 
 // Advance the checklist; call every tick. Only the first unchecked item is
 // evaluated, cascading through consecutive satisfied items in one pass.
 export function tickChecklist(s) {
   let changed = false;
-  for (const it of ALL_ITEMS) {
+  for (const it of itemsFor(s)) {
     if (s.ckDone[it.id]) continue;
     if (!it.done(s)) break;
     s.ckDone[it.id] = true;
@@ -107,7 +183,7 @@ export function tickChecklist(s) {
 }
 
 export function activeItem(s) {
-  return ALL_ITEMS.find(it => !s.ckDone[it.id]) || null;
+  return itemsFor(s).find(it => !s.ckDone[it.id]) || null;
 }
 
 export function currentPhase(s) {
@@ -117,16 +193,19 @@ export function currentPhase(s) {
 }
 
 export function progress(s) {
-  const done = ALL_ITEMS.filter(it => s.ckDone[it.id]).length;
-  return { done, total: ALL_ITEMS.length };
+  const items = itemsFor(s);
+  const done = items.filter(it => s.ckDone[it.id]).length;
+  return { done, total: items.length };
 }
 
 // --- DOM ---
 export function buildChecklist(root, act) {
   const items = new Map();
+  const phaseEls = [];
   for (const p of PHASES) {
     const ph = document.createElement('div');
     ph.className = 'ck-phase';
+    phaseEls.push({ el: ph, full: !!p.full });
     const h = document.createElement('h3');
     h.textContent = p.title;
     ph.appendChild(h);
@@ -150,9 +229,12 @@ export function buildChecklist(root, act) {
   let lastActive = null;
   return {
     update(s) {
+      const ground = s.gnd.program === 'GROUND';
+      for (const p of phaseEls) p.el.style.display = ground && p.full ? 'none' : '';
       const active = activeItem(s);
       for (const it of ALL_ITEMS) {
         const { row } = items.get(it.id);
+        row.style.display = ground && it.full ? 'none' : '';
         row.classList.toggle('done', !!s.ckDone[it.id]);
         row.classList.toggle('active', active && active.id === it.id);
       }

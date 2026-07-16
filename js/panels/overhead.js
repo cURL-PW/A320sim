@@ -30,6 +30,11 @@ export function buildOverhead(root, act) {
     get: () => START_FAULT.indexOf(act.state().gnd.startFault),
     set: v => act.do(s => { s.gnd.startFault = START_FAULT[v]; }),
   }));
+  add(gnd.body, toggle({
+    label: 'PROGRAM', onText: 'FULL', offText: 'GND',
+    get: () => act.state().gnd.program === 'FULL',
+    set: v => act.do(s => { s.gnd.program = v ? 'FULL' : 'GROUND'; }),
+  }));
   const load = document.createElement('div');
   load.className = 'gnd-load';
   gnd.body.appendChild(load);
@@ -212,6 +217,8 @@ export function buildOverhead(root, act) {
   }));
   add(lt.body, toggle({ label: 'RWY TURN OFF', get: () => act.state().lights.rwyTurnOff,
     set: v => act.do(s => { s.lights.rwyTurnOff = v; }) }));
+  add(lt.body, toggle({ label: 'LAND', get: () => act.state().lights.land,
+    set: v => act.do(s => { s.lights.land = v; }) }));
 
   // --- SIGNS ---
   const signs = section('SIGNS');

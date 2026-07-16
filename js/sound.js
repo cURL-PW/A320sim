@@ -79,6 +79,16 @@ export function createSound() {
       if (m) this.setCrc(false);
     },
     click() { beep(1800, 0.03, 0, 0.07, 'square'); },
+    // flight-deck callouts via browser TTS (silently skipped if unsupported)
+    say(text) {
+      if (muted || !('speechSynthesis' in window)) return;
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US';
+        u.rate = 1.05;
+        window.speechSynthesis.speak(u);
+      } catch { /* ignore */ }
+    },
     chime() { beep(660, 0.9, 0, 0.3); beep(880, 0.7, 0.05, 0.15); },
     setCrc(on) {
       if (on && !crcTimer && ctx && !muted) {

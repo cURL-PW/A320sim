@@ -111,8 +111,9 @@ export function buildEwd(root) {
         setEgt[i](e.egt, e.egt > 725);
         n2Txt[i].textContent = e.n2.toFixed(1);
         ffTxt[i].textContent = String(Math.round(e.ff / 10) * 10);
-        ign[i].textContent = e.ignition ? 'IGN' : '';
-        ign[i].setAttribute('class', 'w');
+        ign[i].textContent = e.ignition ? 'IGN'
+          : s.flight.rev && e.state === 'running' ? 'REV' : '';
+        ign[i].setAttribute('class', e.ignition ? 'w' : 'g');
       }
       fobVal.textContent = String(Math.round(s.fob / 10) * 10);
       const flapMoving = Math.abs(s.flapPos - s.flapLever) > 0.02;

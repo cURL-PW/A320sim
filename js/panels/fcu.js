@@ -67,6 +67,25 @@ export function buildFcu(root, act) {
   // V/S (display only)
   const vs = windowBox(row, 'V/S');
 
+  // AP1 / APPR pushbuttons
+  const apCell = div('fcu-cell fcu-apcell', row);
+  div('fcu-winlabel', apCell).textContent = 'AP / APPR';
+  const ap1Btn = document.createElement('button');
+  ap1Btn.type = 'button';
+  ap1Btn.className = 'fcu-apbtn';
+  ap1Btn.textContent = 'AP1';
+  ap1Btn.addEventListener('click', () => act.do(s => {
+    if (s.flight.airborne || s.flight.ap1) s.flight.ap1 = !s.flight.ap1;
+  }));
+  const apprBtn = document.createElement('button');
+  apprBtn.type = 'button';
+  apprBtn.className = 'fcu-apbtn';
+  apprBtn.textContent = 'APPR';
+  apprBtn.addEventListener('click', () => act.do(s => {
+    if (s.flight.phase !== 'ground') s.flight.appr = !s.flight.appr;
+  }));
+  apCell.append(ap1Btn, apprBtn);
+
   // BARO
   const baro = windowBox(row, 'QNH');
   knobZones(baro.wrap,
@@ -94,6 +113,8 @@ export function buildFcu(root, act) {
       hdgBtn.classList.toggle('managed', s.fcu.hdgManaged);
       mw.classList.toggle('lit', d.dcPower && !s.ackWarn);
       mc.classList.toggle('lit', d.dcPower && !s.ackCaut);
+      ap1Btn.classList.toggle('on', s.flight.ap1);
+      apprBtn.classList.toggle('on', s.flight.appr);
     },
   };
 }

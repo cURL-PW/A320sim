@@ -25,6 +25,14 @@ export function buildPedestal(root, act) {
     set: v => act.do(s => { s.engMaster[1] = v; }),
   }));
 
+  // --- THRUST LEVERS (detent buttons) + reversers ---
+  const thr = section('THRUST');
+  add(thr.body, thrustLevers(act));
+
+  // --- LANDING GEAR ---
+  const lg = section('L/G');
+  add(lg.body, gearLever(act));
+
   // --- FLAPS / SPD BRK ---
   const cfg = section('FLAPS / SPD BRK');
   add(cfg.body, rotary({
@@ -78,8 +86,76 @@ export function buildPedestal(root, act) {
     set: v => act.do(s => { s.parkBrk = v; }),
   }));
 
-  root.append(eng.el, cfg.el, fc.el, ab.el, atc.el, brk.el);
+  root.append(eng.el, thr.el, lg.el, cfg.el, fc.el, ab.el, atc.el, brk.el);
   return { update: (s, d) => updaters.forEach(u => u.update(s, d)) };
+}
+
+// Thrust detent selector: TOGA / FLX / CLB / IDLE stacked, plus REV MAX.
+function thrustLevers(act) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ctl thr-levers';
+  const col = document.createElement('div');
+  col.className = 'thr-col';
+  wrap.appendChild(col);
+  const btns = {};
+  for (const det of ['TOGA', 'FLX', 'CLB', 'IDLE']) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'thr-detent';
+    b.textContent = det === 'FLX' ? 'FLX/MCT' : det;
+    b.addEventListener('click', () => act.do(s => {
+      s.flight.thrust = det;
+      if (det !== 'IDLE') s.flight.rev = false;
+    }));
+    btns[det] = b;
+    col.appendChild(b);
+  }
+  const rev = document.createElement('button');
+  rev.type = 'button';
+  rev.className = 'thr-detent thr-rev';
+  rev.textContent = 'REV MAX';
+  rev.addEventListener('click', () => act.do(s => {
+    if (s.flight.thrust === 'IDLE') s.flight.rev = !s.flight.rev;
+  }));
+  col.appendChild(rev);
+  return {
+    el: wrap,
+    update(s) {
+      for (const [det, b] of Object.entries(btns)) {
+        b.classList.toggle('active', s.flight.thrust === det && !s.flight.rev);
+      }
+      rev.classList.toggle('active', s.flight.rev);
+    },
+  };
+}
+
+// Landing gear lever with position indicator.
+function gearLever(act) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ctl';
+  const ind = document.createElement('div');
+  ind.className = 'gear-ind';
+  wrap.appendChild(ind);
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'gear-lever';
+  wrap.appendChild(b);
+  const cap = document.createElement('div');
+  cap.className = 'ctl-label';
+  cap.textContent = 'LDG GEAR';
+  wrap.appendChild(cap);
+  b.addEventListener('click', () => act.do(s => { s.flight.gear = !s.flight.gear; }));
+  return {
+    el: wrap,
+    update(s, d) {
+      const f = s.flight;
+      b.classList.toggle('up', !f.gear);
+      b.textContent = f.gear ? 'DOWN' : 'UP';
+      const moving = (f.gear ? 1 : 0) !== f.gearPos;
+      ind.textContent = !d.dcPower ? '' : moving ? 'UNLK' : f.gearPos >= 1 ? '▼▼▼' : '';
+      ind.className = 'gear-ind ' + (moving ? 'gear-red' : 'gear-green');
+    },
+  };
 }
 
 // F/CTL check button: lights up once its deflection has been exercised.

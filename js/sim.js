@@ -1,5 +1,6 @@
 // Systems simulation. Runs only in the main window at ~10 Hz.
 import { derive, ENG_MODE, centerEmpty } from './model.js';
+import { tickFlight } from './flight.js';
 
 // Move v toward target at |rate| units per second.
 function approach(v, target, rate, dt) {
@@ -28,6 +29,8 @@ export function tick(s, dt) {
   f.elev = approach(f.elev, 0, 1.6, dt);
   f.rud = approach(f.rud, 0, 1.6, dt);
 
+  tickFlight(s, d, dt);
+
   // Fuel burn (very rough): engines + APU
   const burn = (s.eng[0].ff + s.eng[1].ff + (s.apu.n > 10 ? 120 : 0)) / 3600;
   s.fob = Math.max(0, s.fob - burn * dt);
@@ -52,6 +55,9 @@ export function computeAlerts(s) {
   }
   if (s.toConfig === 'warning') {
     list.push({ key: 'tocfg', text: 'CONFIG FLAPS NOT IN T.O RANGE', level: 'warn' });
+  }
+  if (['approach', 'flare'].includes(s.flight.phase) && s.flight.agl < 750 && !s.flight.gear) {
+    list.push({ key: 'gear', text: 'L/G GEAR NOT DOWN', level: 'warn' });
   }
   return list;
 }
@@ -174,10 +180,12 @@ function tickEngines(s, d, dt) {
           }
         }
       } else if (e.state === 'running') {
-        e.n1 = approach(e.n1, IDLE.n1, 1.5, dt);
-        e.n2 = approach(e.n2, IDLE.n2, 1.5, dt);
-        e.egt = approach(e.egt, IDLE.egt, 30, dt);
-        e.ff = approach(e.ff, IDLE.ff, 40, dt);
+        // thrust follows the flight model's commanded N1 when flying
+        const n1t = s.flight.n1cmd ?? IDLE.n1;
+        e.n1 = approach(e.n1, n1t, n1t > e.n1 ? 6 : 5, dt);
+        e.n2 = approach(e.n2, Math.max(IDLE.n2, 55 + e.n1 * 0.42), 4, dt);
+        e.egt = approach(e.egt, n1t <= 20 ? IDLE.egt : 280 + e.n1 * 4.2, 30, dt);
+        e.ff = approach(e.ff, n1t <= 20 ? IDLE.ff : Math.round(e.n1 * 28), 200, dt);
       }
       // master ON but no start permission: nothing happens (valve stays closed)
     } else if (e.state !== 'off') {

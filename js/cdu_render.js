@@ -1,6 +1,7 @@
 // Builds the 14-line MCDU screen content from a state snapshot.
 // Line = array of segments { t, cls, pos: 'l'|'c'|'r' }.
 // Rows: 0 title, 1..12 alternating label/data for LSK 1-6, 13 scratchpad.
+import { getScenario } from './navdata.js';
 
 export function renderCdu(s, d) {
   const rows = Array.from({ length: 14 }, () => []);
@@ -57,7 +58,7 @@ export function renderCdu(s, d) {
     seg(0, 'TAKE OFF', 'w', 'c');
     seg(1, 'V1', 'label'); seg(1, 'RWY', 'label', 'r');
     seg(2, c.v1 ? String(c.v1) : '___', c.v1 ? 'c-col' : 'a');
-    seg(2, c.from ? '34R' : '---', 'g', 'r');
+    seg(2, c.dep ? c.dep.rwy : '---', 'g', 'r');
     seg(3, 'VR', 'label'); seg(3, 'TO SHIFT', 'label', 'r');
     seg(4, c.vr ? String(c.vr) : '___', c.vr ? 'c-col' : 'a');
     seg(4, '----', 'w', 'r');
@@ -71,6 +72,46 @@ export function renderCdu(s, d) {
     seg(10, '1500/1500', 'c-col');
     seg(11, 'UPLINK', 'label'); seg(11, 'NEXT', 'label', 'r');
     seg(12, '<TO DATA', 'w'); seg(12, 'PHASE>', 'w', 'r');
+  } else if (c.page === 'FPLN') {
+    const sc = getScenario(s);
+    seg(0, c.fltNbr || 'F-PLN', 'w', 'c');
+    if (!c.from) {
+      seg(2, '------END OF F-PLN------', 'w', 'c');
+    } else {
+      seg(1, 'FROM', 'label'); seg(1, 'TIME  SPD/ALT', 'label', 'r');
+      seg(2, `${c.from}${c.dep ? c.dep.rwy : ''}`, 'g');
+      seg(2, c.dep ? `---- 000/${sc.from.elev}` : '<SEL DEPARTURE', c.dep ? 'g' : 'a', 'r');
+      if (c.dep) {
+        seg(4, sc.route[1].id, 'g'); seg(3, c.dep.sid, 'label');
+        const mid = sc.route.slice(2, -2).map(w => w.id).join('  ');
+        seg(6, mid, 'g');
+        seg(8, sc.route[sc.route.length - 2].id, 'g');
+        if (c.arr) seg(7, c.arr.star, 'label');
+      }
+      seg(11, 'DEST', 'label');
+      seg(12, `${c.to}${c.arr ? sc.to.rwy : ''}`, 'g');
+      seg(12, c.arr ? c.arr.appr : '<SEL ARRIVAL', c.arr ? 'g' : 'a', 'r');
+    }
+  } else if (c.page === 'DEPARTURE') {
+    const sc = getScenario(s);
+    seg(0, `DEPARTURE ${c.from}`, 'w', 'c');
+    seg(1, 'RWY', 'label');
+    seg(2, `${c.tmpy && c.tmpy.rwy ? ' ' : '<'}${sc.from.rwy}`, c.tmpy && c.tmpy.rwy ? 'c-col' : 'w');
+    seg(3, 'SID', 'label');
+    seg(4, `${c.tmpy && c.tmpy.sid ? ' ' : '<'}${sc.from.sid}`, c.tmpy && c.tmpy.sid ? 'c-col' : 'w');
+    seg(11, '', 'label');
+    seg(12, '<RETURN', 'w');
+    if (c.tmpy && c.tmpy.rwy && c.tmpy.sid) seg(12, 'INSERT*', 'a', 'r');
+  } else if (c.page === 'ARRIVAL') {
+    const sc = getScenario(s);
+    seg(0, `ARRIVAL ${c.to}`, 'w', 'c');
+    seg(1, 'APPR', 'label');
+    seg(2, `${c.tmpy && c.tmpy.appr ? ' ' : '<'}${sc.to.appr} ${sc.to.ilsFreq}`, c.tmpy && c.tmpy.appr ? 'c-col' : 'w');
+    seg(3, 'STAR', 'label');
+    seg(4, `${c.tmpy && c.tmpy.star ? ' ' : '<'}${sc.to.star}`, c.tmpy && c.tmpy.star ? 'c-col' : 'w');
+    seg(11, '', 'label');
+    seg(12, '<RETURN', 'w');
+    if (c.tmpy && c.tmpy.appr && c.tmpy.star) seg(12, 'INSERT*', 'a', 'r');
   } else if (c.page === 'STATUS') {
     seg(0, 'A320-214', 'w', 'c');
     seg(1, 'ENG', 'label');

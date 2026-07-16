@@ -467,6 +467,87 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
 .ecam-btns button.tocfg { color: #ffb000; }
 
+/* ---------------- flight deck (PFD / ND) ---------------- */
+#fd-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.fd-screen { flex: 1 1 340px; max-width: 520px; margin: 0; position: relative; }
+.ecam-screen .tape { fill: #10151a; stroke: #55606a; }
+.ecam-screen .valwin { fill: #060a06; stroke: #e8eef2; stroke-width: 1.5; }
+.ecam-screen .bug { fill: #00e5ff; font-weight: 700; }
+.ecam-screen .callout { font-size: 26px; font-weight: 700; }
+.ecam-screen .tiny { font-size: 10px; }
+.ecam-screen .ilsdot { fill: none; stroke: #e8eef2; }
+.ecam-screen .ils-dia { fill: #ff4dff; }
+.ecam-screen .route { fill: none; stroke: #35e08a; stroke-width: 2; }
+.ecam-screen .wpt { fill: none; stroke: #e8eef2; stroke-width: 1.5; }
+.ecam-screen .wpt-rwy { fill: #00e5ff; }
+.ecam-screen .acft { fill: #ffe14d; stroke: #806f00; }
+.ecam-screen .flash { animation: annun-flash 0.8s steps(2) infinite; }
+.nd-btns {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nd-btns button {
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #00e5ff;
+  background: #0a1418e0;
+  border: 1px solid #1d4d5c;
+  border-radius: 6px;
+}
+.nd-btns button:active { background: #14282e; }
+
+/* ---------------- thrust levers / gear ---------------- */
+.thr-col { display: flex; flex-direction: column; gap: 4px; }
+.thr-detent {
+  min-width: 86px;
+  min-height: 34px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8b98a5;
+  background: #101317;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+.thr-detent.active { color: #fff; border-color: #e8eef2; background: #232a32; }
+.thr-rev { color: #ffb000; }
+.thr-rev.active { color: #200f00; background: #ffb000; border-color: #ffb000; }
+.gear-lever {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e8eef2;
+  background: radial-gradient(circle at 35% 30%, #3d454e, #14171b);
+  border: 3px solid #4a545f;
+}
+.gear-lever.up { color: #8b98a5; border-color: #6a747e; }
+.gear-ind { min-height: 16px; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+.gear-green { color: #35e08a; }
+.gear-red { color: #ff4d4d; }
+
+/* ---------------- FCU AP / APPR ---------------- */
+.fcu-apcell { min-width: 0; }
+.fcu-apbtn {
+  min-width: 62px;
+  min-height: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cdd6de;
+  background: #101317;
+  border: 2px solid #454e58;
+  border-radius: 4px;
+}
+.fcu-apbtn.on { color: #35e08a; border-color: #2a6a4a; box-shadow: inset 0 -3px 0 #35e08a; }
+
 /* ---------------- ECAM ---------------- */
 .screenwrap {
   background: #000;

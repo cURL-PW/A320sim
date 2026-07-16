@@ -6,6 +6,8 @@ import { buildOverhead } from './panels/overhead.js';
 import { buildPedestal } from './panels/pedestal.js';
 import { buildFcu } from './panels/fcu.js';
 import { buildEwd, buildSd } from './ecam.js';
+import { buildPfd } from './pfd.js';
+import { buildNd } from './nd.js';
 import { buildChecklist, tickChecklist, currentPhase, activeItem, progress } from './checklist.js';
 import { handleCduKey } from './cdu_logic.js';
 import { createSound } from './sound.js';
@@ -53,6 +55,8 @@ function broadcast() {
 const overhead = buildOverhead(document.getElementById('overhead-body'), act);
 const pedestal = buildPedestal(document.getElementById('pedestal-body'), act);
 const fcu = buildFcu(document.getElementById('fcu-body'), act);
+const pfd = buildPfd(document.getElementById('pfd'));
+const nd = buildNd(document.getElementById('nd'), act);
 const ewd = buildEwd(document.getElementById('ewd'));
 const sd = buildSd(document.getElementById('sd'), act);
 const checklist = buildChecklist(document.getElementById('checklist-body'), act);
@@ -90,7 +94,8 @@ stateSel.addEventListener('change', () => {
 });
 
 // --- exam mode: hide the checklist, time the flow, grade at the end ---
-const EXAM_PAR_OPS = 85;
+const EXAM_PAR = { GROUND: 85, FULL: 130 };
+const parOps = () => EXAM_PAR[state.gnd.program] || EXAM_PAR.FULL;
 const examBtn = document.getElementById('btn-exam');
 const examStatus = document.getElementById('exam-status');
 const examResult = document.getElementById('exam-result');
@@ -100,7 +105,9 @@ examBtn.addEventListener('click', () => {
     return;
   }
   if (!confirm('試験モード: チェックリストを隠して Cold & Dark から全手順を実施します。\n所要時間・操作数・警告発生数で採点されます。開始しますか?')) return;
+  const program = state.gnd.program;
   state = coldAndDark();
+  state.gnd.program = program;
   state.exam = { started: false, time: 0, ops: 0, alerts: 0, result: null };
   saveState();
   refresh();
@@ -111,7 +118,7 @@ document.getElementById('exam-close').addEventListener('click', () => {
 });
 
 function gradeExam(e) {
-  const ratio = e.ops / EXAM_PAR_OPS;
+  const ratio = e.ops / parOps();
   if (e.alerts === 0 && ratio <= 1.1) return 'S';
   if (e.alerts <= 1 && ratio <= 1.3) return 'A';
   if (e.alerts <= 3 && ratio <= 1.6) return 'B';
@@ -134,6 +141,16 @@ function refresh() {
   overhead.update(state, d);
   pedestal.update(state, d);
   fcu.update(state, d);
+  pfd.update(state, d);
+  nd.update(state, d);
+  document.getElementById('flightdeck').style.display =
+    state.gnd.program === 'FULL' ? '' : 'none';
+
+  // speak queued flight callouts
+  const q = state.flight.sayQueue;
+  if (q && q.length) {
+    for (const text of q.splice(0)) sound.say(text);
+  }
   ewd.update(state, d);
   sd.update(state, d);
   checklist.update(state);
@@ -154,7 +171,7 @@ function refresh() {
       };
       document.getElementById('exam-grade').textContent = exam.result.grade;
       document.getElementById('exam-detail').textContent =
-        `所要時間 ${fmtTime(exam.result.time)} · 操作数 ${exam.result.ops}(目安 ${EXAM_PAR_OPS})· 警告発生 ${exam.result.alerts} 回`;
+        `所要時間 ${fmtTime(exam.result.time)} · 操作数 ${exam.result.ops}(目安 ${parOps()})· 警告発生 ${exam.result.alerts} 回`;
     }
   }
   examResult.style.display = exam && exam.result ? 'flex' : 'none';
