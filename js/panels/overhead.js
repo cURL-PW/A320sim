@@ -2,6 +2,7 @@
 // ANTI ICE / EXT LT / SIGNS
 import { korry, rotary, toggle, toggle3, section } from '../components.js';
 import { IR_MODE, STROBE_MODE, NOSE_LT, START_FAULT, FUEL_PLANS, centerEmpty, LOADSHEET } from '../model.js';
+import { getScenario } from '../navdata.js';
 
 export function buildOverhead(root, act) {
   const updaters = [];
@@ -40,9 +41,12 @@ export function buildOverhead(root, act) {
   gnd.body.appendChild(load);
   updaters.push({
     update(s) {
+      const td = getScenario(s).toData;
       load.innerHTML = `LOADSHEET<br>ZFW ${LOADSHEET.zfw.toFixed(1)} / CG ${LOADSHEET.zfwcg.toFixed(1)}` +
         `<br>BLOCK ${FUEL_PLANS[s.gnd.fuelPlan].block.toFixed(1)}` +
-        `<br>CTR TK ${centerEmpty(s) ? 'EMPTY' : 'FUELED'}`;
+        `<br>CTR TK ${centerEmpty(s) ? 'EMPTY' : 'FUELED'}` +
+        `<br><span class="gnd-todata">TO DATA V1 ${td.v1}/VR ${td.vr}/V2 ${td.v2}` +
+        `<br>FLEX ${td.flex} · FLAP ${td.flapsThs} · TRANS ${td.transAlt}</span>`;
     },
   });
 

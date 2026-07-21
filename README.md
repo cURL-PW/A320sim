@@ -52,9 +52,10 @@ python3 -m http.server 8000
 
 1. **COCKPIT PREPARATION** — GND: GPU 接続(EFB 相当)→ BAT 1+2 ON → EXT PWR ON → ADIRS NAV →
    HYD / ELEC / FIRE パネル確認 → ANTI ICE OFF 確認 → PACK 1+2 OFF 確認 → NAV & LOGO ON →
-   STROBE AUTO → SIGNS ON → MCDU INIT A(FROM/TO 例: `RJTT/RJOO` → LSK1R)→
+   STROBE AUTO → SIGNS ON → MCDU INIT A(FROM/TO 例: `RJAA/RJGG` → LSK1R)→
    MCDU INIT B(→キーで移動。ZFW/CG 例: `54.3/28.0` → LSK1R、BLOCK `6.3` → LSK2R。値は GND SERVICES のロードシート参照)→
-   MCDU PERF(V1/VR/V2・TRANS ALT・FLAPS/THS `1/UP0.5`・FLEX)→
+   MCDU PERF(V1 `135` / VR `137` / V2 `140`・TRANS ALT `14000`・FLAPS/THS `1/UP0.5`・FLEX `55`。
+   **値は GND SERVICES の「TO DATA」表示を参照**)→
    FCU: SPD/HDG を PUSH でマネージド(`---`)→ INIT ALT 6000 → BARO を QNH 1006(FCU 上部のクリアランス表示参照)
 2. **BEFORE START** — ウィング燃料ポンプ(4)ON(**CTR ポンプはセンター燃料なしのため OFF のまま**。
    ON にすると FAULT/低圧が点灯)→ APU MASTER ON → APU START(AVAIL まで約 25 秒)→ APU BLEED ON →

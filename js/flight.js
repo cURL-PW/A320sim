@@ -22,10 +22,11 @@ function callout(s, id, text) {
 }
 
 export function vSpeeds(s) {
+  const td = getScenario(s).toData;
   return {
-    v1: s.cdu.v1 || 135,
-    vr: s.cdu.vr || 137,
-    v2: s.cdu.v2 || 140,
+    v1: s.cdu.v1 || td.v1,
+    vr: s.cdu.vr || td.vr,
+    v2: s.cdu.v2 || td.v2,
   };
 }
 

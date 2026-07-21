@@ -452,6 +452,13 @@ main { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
   padding: 4px 8px;
   align-self: center;
 }
+.gnd-todata {
+  display: inline-block;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid #1d3a4d;
+  color: #ffce6b;
+}
 .fctl-btn {
   min-width: 46px;
   min-height: 46px;

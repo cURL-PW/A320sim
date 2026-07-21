@@ -13,6 +13,8 @@ export const SCENARIOS = [
     accAlt: 1500,
     clearance: { initAlt: 6000, qnh: 1006, squawk: '2000' },
     loadsheet: { zfw: 54.3, zfwcg: 28.0 },
+    // recommended take-off data (EFB perf calc stand-in for TOW ~60.6t)
+    toData: { v1: 135, vr: 137, v2: 140, flex: 55, flapsThs: '1/UP0.5', transAlt: 14000 },
     // route: departure runway -> SID wp -> enroute -> STAR wp -> arrival runway
     route: [
       { id: 'RJAA34L', x: 0, y: 0, kind: 'rwy' },
