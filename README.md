@@ -9,11 +9,14 @@ Fenix A320 の地上手順(Cold & Dark → エンジンスタート → シャ�
 - 手順チェックリスト内蔵。スイッチ操作と連動して自動でチェックが入ります
 - ECAM 警告体系(MASTER WARN/CAUT + チャイム)と異常始動(ホット/ハングスタート)を再現
 - サウンドは Web Audio 合成(クリック音・APU/エンジンスプール音・チャイム)。ヘッダの 🔊 で消音可
+- **ヘルプ/ガイド**: ヘッダの **? HELP** でヘルプモード(コントロールをタップ→名称・機能を説明表示)、
+  **GUIDE**(既定 ON)で現在の手順ステップに対応する実機ボタンを緑リングで点滅表示
 - **試験モード**(チェックリスト非表示で全手順を実施 → 所要時間・操作数・警告数で採点)
 - 状態は自動保存(リロードしても続きから再開)。STATE メニューで Cold & Dark / ターンアラウンドを選択可
 - PWA 対応(ホーム画面に追加でフルスクリーン起動・オフライン動作)
 - **飛行フェーズ対応**: RJAA→RJGG の固定シナリオを自動操縦ベースでフルフライト
-  (離陸 → 上昇 → 巡航[TIME SKIP可] → 降下 → ILS オートランド → タキシーイン → シャットダウン)。
+  (離陸 → 上昇 → 巡航 → 降下 → ILS オートランド → タキシーイン → シャットダウン。
+  上昇/巡航/降下は ND の TIME SKIP で早送り可)。
   PFD / ND、FMA、TTS コールアウト(V1/Rotate/Retard 等)つき。
   GND SERVICES の **PROGRAM** トグルで従来どおり地上手順のみ(GND)にも切替可能
 
@@ -80,8 +83,10 @@ AFTER START 完了後、チェックリストが飛行フェーズへ進みま�
 2. **TAKEOFF** — スラストレバーを **FLX/MCT**(フラップ未設定だと CONFIG 警告で始動しない)→
    100kt/V1/Rotate コールアウト → 自動ローテーション → **GEAR UP** → 1,500ft で FMA が
    **LVR CLB** 点滅 → レバーを **CLB** → FLAPS 0 → **AP1 ON** → PACK ON
-3. **CLIMB/CRUISE** — FCU ALT を FL240 にセット → 巡航到達後、ND の **TIME SKIP → T/D**
-4. **DESCENT** — FCU ALT 3000 → 降下開始(THR IDLE/DES)→ 10,000ft コールアウト
+3. **CLIMB/CRUISE** — FCU ALT を FL240 にセット → ND の **TIME SKIP → T/C**(上昇を早送り)→
+   巡航到達後 **TIME SKIP → T/D**
+4. **DESCENT** — FCU ALT 3000 → 降下開始(THR IDLE/DES)→ 10,000ft コールアウト →
+   APPR アーム後は **TIME SKIP → APPR** で降下も早送り可
 5. **APPROACH** — FCU の **APPR** アーム → LOC/G/S キャプチャ → 減速に合わせ FLAPS 1→2→(GEAR DOWN)→3→FULL → AUTO BRK MED
 6. **LANDING** — 1000/500/Minimums → **Retard** でレバー IDLE → 接地 → **REV MAX** → 70kt で REV 戻し → AP OFF → ND の **VACATE RWY**
 7. **AFTER LANDING** — FLAPS 0 → スポイラー解除 → LAND LT OFF → XPDR STBY → 以降は従来のシャットダウン手順

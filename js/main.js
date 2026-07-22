@@ -12,6 +12,7 @@ import { buildChecklist, tickChecklist, currentPhase, activeItem, progress } fro
 import { handleCduKey } from './cdu_logic.js';
 import { buildCduUnit } from './cdu_ui.js';
 import { createSound } from './sound.js';
+import { helpFor, buildHelpPopover } from './help.js';
 
 let state = loadState() || coldAndDark();
 
@@ -109,6 +110,55 @@ stateSel.addEventListener('change', () => {
   refresh();
 });
 
+// --- help mode (tap a control to read what it does) + guide highlight ---
+const helpPop = buildHelpPopover();
+let helpMode = false;
+let guideOn = true;
+const helpBtn = document.getElementById('btn-help');
+const guideBtn = document.getElementById('btn-guide');
+helpBtn.addEventListener('click', () => {
+  helpMode = !helpMode;
+  document.body.classList.toggle('help-mode', helpMode);
+  helpBtn.classList.toggle('active', helpMode);
+  if (!helpMode) helpPop.hide();
+  refresh();
+});
+guideBtn.addEventListener('click', () => {
+  guideOn = !guideOn;
+  guideBtn.classList.toggle('active', guideOn);
+  refresh();
+});
+guideBtn.classList.toggle('active', guideOn);
+// In help mode, intercept taps on controls to show a description instead of
+// actuating them. Capture phase so it runs before the widget's own handler.
+document.addEventListener('click', ev => {
+  if (!helpMode) return;
+  if (ev.target.closest('#topbar') || ev.target.closest('#help-popover')) return;
+  const info = helpFor(ev.target);
+  ev.preventDefault();
+  ev.stopPropagation();
+  if (info) helpPop.show(info.title, info.text);
+  else helpPop.show('—', 'この操作の説明はまだ用意されていません。');
+}, true);
+
+let guideEls = [];
+function updateGuide() {
+  for (const el of guideEls) el.classList.remove('guide-hl');
+  guideEls = [];
+  if (!guideOn || helpMode || state.exam) return;
+  const active = activeItem(state);
+  if (!active || !active.target) return;
+  let el = null;
+  const t = active.target;
+  if (t[0] === '#' || t[0] === '.' || t[0] === '[') el = document.querySelector(t);
+  else {
+    for (const lbl of document.querySelectorAll('.ctl-label')) {
+      if (lbl.textContent.trim() === t) { el = lbl.closest('.ctl'); break; }
+    }
+  }
+  if (el && el.offsetParent !== null) { el.classList.add('guide-hl'); guideEls.push(el); }
+}
+
 // --- exam mode: hide the checklist, time the flow, grade at the end ---
 const EXAM_PAR = { GROUND: 85, FULL: 130 };
 const parOps = () => EXAM_PAR[state.gnd.program] || EXAM_PAR.FULL;
@@ -172,6 +222,7 @@ function refresh() {
   ewd.update(state, d);
   sd.update(state, d);
   checklist.update(state);
+  updateGuide();
   const ph = currentPhase(state);
   phaseEl.textContent = ph ? ph.title : 'FLOW COMPLETE';
 

@@ -1,6 +1,6 @@
 // Offline support: network-first with cache fallback, so updates deploy
 // normally and the app still opens without a connection.
-const CACHE = 'a320sim-v4';
+const CACHE = 'a320sim-v5';
 const PRECACHE = [
   './',
   './index.html',
@@ -26,6 +26,11 @@ const PRECACHE = [
   './js/panels/overhead.js',
   './js/panels/pedestal.js',
   './js/panels/fcu.js',
+  './js/flight.js',
+  './js/navdata.js',
+  './js/pfd.js',
+  './js/nd.js',
+  './js/help.js',
   './manifest.webmanifest',
 ];
 

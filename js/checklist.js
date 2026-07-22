@@ -100,7 +100,7 @@ export const PHASES = [
     id: 'climbcrz', title: 'CLIMB & CRUISE', full: true, items: [
       { id: 'fcu-crz', label: 'FCU ALT', action: 'FL240', done: s => s.fcu.alt === getScenario(s).crzFl * 100 },
       { id: 'crz', label: 'CRUISE FL240', action: 'REACHED', done: s => atLeast(s.flight, 'cruise') },
-      { id: 'skip-tod', label: 'TIME SKIP → T/D (ND)', action: 'PRESS', done: s => s.flight.pos >= todPos(s) - 4 },
+      { id: 'skip-tod', label: 'TIME SKIP (ND)', action: 'PRESS', done: s => s.flight.pos >= todPos(s) - 4 },
     ],
   },
   {
@@ -160,8 +160,36 @@ export const PHASES = [
   },
 ];
 
+// Guide highlight targets: checklist item id -> a control to flash on the panel.
+// A value starting with '#'/'.'/'[' is a CSS selector; otherwise it matches a
+// control by its .ctl-label text. Items without an entry are simply not
+// highlighted (the checklist row still shows the action).
+const GUIDE_TARGET = {
+  gpu: 'GPU', bat: 'BAT 1', extpwr: 'EXT PWR', adirs: 'IR 1',
+  navlogo: 'NAV & LOGO', strobe: 'STROBE', signs: 'SEAT BELTS',
+  'cdu-init': '#btn-cdu', 'cdu-fpln': '#btn-cdu', 'cdu-initb': '#btn-cdu', 'cdu-perf': '#btn-cdu',
+  'fcu-managed': '.fcu-cell.fcu-spd .fcu-push', 'fcu-alt': '.fcu-cell.fcu-alt', 'fcu-baro': '.fcu-cell.fcu-qnh',
+  fuel: 'L TK 1', ctr: 'CTR 1', apum: 'MASTER SW', apus: 'START', apub: 'APU BLEED',
+  'packs-on1': 'PACK 1', 'xpdr-code': 'CODE', parkbrk: 'PARK BRK', beacon: 'BEACON', 'packs-off1': 'PACK 1',
+  eng2: '[data-guide="master-2"]', eng1: '[data-guide="master-1"]',
+  apuboff: 'APU BLEED', apumoff: 'MASTER SW', 'packs-on2': 'PACK 1', extoff: 'EXT PWR',
+  splrs: 'SPD BRK', flaps: 'FLAPS', autobrk: 'MAX', tocfg: 'button.tocfg',
+  'land-on': 'LAND', 'packs-to': 'PACK 1', 'parkbrk-off': 'PARK BRK', lineup: '.nd-btns button',
+  'lever-to': '[data-guide="thr-FLX"]', 'gear-up': '.gear-lever', 'lever-clb': '[data-guide="thr-CLB"]',
+  flaps0: 'FLAPS', 'ap1-on': '[data-guide="ap1"]', 'packs-on3': 'PACK 1',
+  'fcu-crz': '.fcu-cell.fcu-alt', 'skip-tod': '.nd-btns button',
+  'fcu-des': '.fcu-cell.fcu-alt', 'land-chk': 'LAND',
+  'appr-arm': '[data-guide="appr"]', flaps1a: 'FLAPS', flaps2a: 'FLAPS', 'gear-dn': '.gear-lever',
+  flaps3a: 'FLAPS', flapsfa: 'FLAPS', 'abrk-med': 'MED',
+  retard: '[data-guide="thr-IDLE"]', 'rev-max': '.thr-rev', 'ap-off': '[data-guide="ap1"]',
+  vacate: '.nd-btns button', 'al-flaps': 'FLAPS', 'al-splrs': 'SPD BRK', 'al-land': 'LAND',
+  'sd-parkbrk': 'PARK BRK', 'sd-flaps': 'FLAPS', 'sd-splrs': 'SPD BRK', 'sd-ext': 'EXT PWR',
+  'sd-beacon': 'BEACON', 'sd-belts': 'SEAT BELTS', 'sd-fuel': 'L TK 1', 'sd-navlogo': 'NAV & LOGO',
+  'sd-bat': 'BAT 1',
+};
+
 const ALL_ITEMS = PHASES.flatMap(p =>
-  p.items.map(it => ({ ...it, phase: p.id, full: p.full || it.full })));
+  p.items.map(it => ({ ...it, phase: p.id, full: p.full || it.full, target: GUIDE_TARGET[it.id] || null })));
 
 // GROUND program skips the flight-only phases/items.
 function itemsFor(s) {

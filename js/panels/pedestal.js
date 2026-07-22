@@ -94,6 +94,8 @@ export function buildPedestal(root, act) {
 function thrustLevers(act) {
   const wrap = document.createElement('div');
   wrap.className = 'ctl thr-levers';
+  wrap.dataset.help = '@thr';
+  wrap.dataset.helpTitle = 'THRUST LEVERS';
   const col = document.createElement('div');
   col.className = 'thr-col';
   wrap.appendChild(col);
@@ -102,6 +104,7 @@ function thrustLevers(act) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'thr-detent';
+    b.dataset.guide = 'thr-' + det;
     b.textContent = det === 'FLX' ? 'FLX/MCT' : det;
     b.addEventListener('click', () => act.do(s => {
       s.flight.thrust = det;

@@ -2,7 +2,7 @@
 // TO-waypoint readout. Also hosts the phase-dependent action buttons
 // (LINE UP / TIME SKIP / VACATE).
 import { getScenario, routePoint, routeDistances, totalDistance } from './navdata.js';
-import { canLineUp, lineUp, timeSkip, canVacate, vacate, todPos } from './flight.js';
+import { canLineUp, lineUp, timeWarp, warpTarget, canVacate, vacate, todPos } from './flight.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 function el(tag, attrs = {}, parent) {
@@ -75,8 +75,12 @@ export function buildNd(root, act) {
     return b;
   };
   const lineupBtn = mkBtn('LINE UP', () => act.do(s => { if (canLineUp(s)) lineUp(s); }));
-  const skipBtn = mkBtn('TIME SKIP → T/D', () => act.do(s => timeSkip(s)));
+  const skipBtn = mkBtn('TIME SKIP', () => act.do(s => timeWarp(s)));
   const vacateBtn = mkBtn('VACATE RWY', () => act.do(s => { if (canVacate(s)) vacate(s); }));
+  lineupBtn.dataset.help = '@lineup'; lineupBtn.dataset.helpTitle = 'LINE UP';
+  skipBtn.dataset.help = '@warp'; skipBtn.dataset.helpTitle = 'TIME SKIP';
+  vacateBtn.dataset.help = '@vacate'; vacateBtn.dataset.helpTitle = 'VACATE RWY';
+  const WARP_LABEL = { TOC: 'TIME SKIP → T/C', TOD: 'TIME SKIP → T/D', APPR: 'TIME SKIP → APPR' };
 
   return {
     update(s, d) {
@@ -99,7 +103,9 @@ export function buildNd(root, act) {
         phaseTxt.textContent = f.phase.toUpperCase();
       }
       lineupBtn.style.display = canLineUp(s) ? '' : 'none';
-      skipBtn.style.display = s.flight.phase === 'cruise' && s.flight.pos < todPos(s) - 4 ? '' : 'none';
+      const wt = warpTarget(s);
+      skipBtn.style.display = wt ? '' : 'none';
+      if (wt) skipBtn.textContent = WARP_LABEL[wt];
       vacateBtn.style.display = canVacate(s) ? '' : 'none';
     },
   };

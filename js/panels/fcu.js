@@ -12,7 +12,7 @@ function div(cls, parent) {
 }
 
 function windowBox(parent, label) {
-  const wrap = div('fcu-cell', parent);
+  const wrap = div('fcu-cell fcu-' + label.toLowerCase().replace(/\W/g, ''), parent);
   div('fcu-winlabel', wrap).textContent = label;
   const win = div('fcu-window', wrap);
   return { wrap, win };
@@ -73,6 +73,9 @@ export function buildFcu(root, act) {
   const ap1Btn = document.createElement('button');
   ap1Btn.type = 'button';
   ap1Btn.className = 'fcu-apbtn';
+  ap1Btn.dataset.guide = 'ap1';
+  ap1Btn.dataset.help = '@ap1';
+  ap1Btn.dataset.helpTitle = 'AP1';
   ap1Btn.textContent = 'AP1';
   ap1Btn.addEventListener('click', () => act.do(s => {
     if (s.flight.airborne || s.flight.ap1) s.flight.ap1 = !s.flight.ap1;
@@ -80,6 +83,9 @@ export function buildFcu(root, act) {
   const apprBtn = document.createElement('button');
   apprBtn.type = 'button';
   apprBtn.className = 'fcu-apbtn';
+  apprBtn.dataset.guide = 'appr';
+  apprBtn.dataset.help = '@appr';
+  apprBtn.dataset.helpTitle = 'APPR';
   apprBtn.textContent = 'APPR';
   apprBtn.addEventListener('click', () => act.do(s => {
     if (s.flight.phase !== 'ground') s.flight.appr = !s.flight.appr;

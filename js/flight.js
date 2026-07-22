@@ -42,11 +42,41 @@ export function lineUp(s) {
   f.hdg = sc.from.hdg;
   f.pos = 0;
 }
-export function timeSkip(s) {
+// Which time-warp is available right now (null = none). Each is gated on the
+// setup the phase requires, so warping never skips a learning step.
+export function warpTarget(s) {
   const f = s.flight;
-  if (f.phase !== 'cruise') return;
-  const tod = todPos(s);
-  if (f.pos < tod - 3) f.pos = tod - 3;
+  const sc = getScenario(s);
+  const crzAlt = sc.crzFl * 100;
+  if ((f.phase === 'climb' || (f.phase === 'takeoff' && f.airborne)) &&
+      f.thrust === 'CLB' && s.fcu.alt >= crzAlt && f.alt < crzAlt - 500) return 'TOC';
+  if (f.phase === 'cruise' && f.pos < todPos(s) - 4) return 'TOD';
+  if (f.phase === 'descent' && f.appr && (totalDistance(sc) - f.pos) > 26) return 'APPR';
+  return null;
+}
+
+export function timeWarp(s) {
+  const f = s.flight;
+  const sc = getScenario(s);
+  const crzAlt = sc.crzFl * 100;
+  switch (warpTarget(s)) {
+    case 'TOC':
+      // fast-forward the climb: level at cruise, advance along track
+      f.alt = crzAlt;
+      f.pos = Math.min(f.pos + 25, todPos(s) - 5);
+      f.phase = 'climb';
+      break;
+    case 'TOD':
+      f.pos = todPos(s) - 3;
+      break;
+    case 'APPR': {
+      // jump to ~25 nm out on a nominal 3° profile so the approach begins
+      const total = totalDistance(sc);
+      f.pos = total - 25;
+      f.alt = sc.to.elev + 25 * 318;
+      break;
+    }
+  }
 }
 export function canVacate(s) {
   return s.flight.phase === 'rollout' && s.flight.ias < 30;

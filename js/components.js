@@ -123,6 +123,7 @@ export function masterLever({ label, get, set }) {
   const wrap = div('ctl');
   const btn = document.createElement('button');
   btn.className = 'master'; btn.type = 'button';
+  btn.dataset.guide = 'master-' + label;
   const grip = div('master-grip', btn);
   grip.textContent = label;
   const stateTxt = div('master-state', btn);
