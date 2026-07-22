@@ -148,15 +148,20 @@ function updateGuide() {
   if (!guideOn || helpMode || state.exam) return;
   const active = activeItem(state);
   if (!active || !active.target) return;
-  let el = null;
-  const t = active.target;
-  if (t[0] === '#' || t[0] === '.' || t[0] === '[') el = document.querySelector(t);
-  else {
-    for (const lbl of document.querySelectorAll('.ctl-label')) {
-      if (lbl.textContent.trim() === t) { el = lbl.closest('.ctl'); break; }
+  const targets = Array.isArray(active.target) ? active.target : [active.target];
+  const found = new Set();
+  for (const t of targets) {
+    if (t[0] === '#' || t[0] === '.' || t[0] === '[') {
+      for (const el of document.querySelectorAll(t)) found.add(el);
+    } else {
+      for (const lbl of document.querySelectorAll('.ctl-label')) {
+        if (lbl.textContent.trim() === t) found.add(lbl.closest('.ctl'));
+      }
     }
   }
-  if (el && el.offsetParent !== null) { el.classList.add('guide-hl'); guideEls.push(el); }
+  for (const el of found) {
+    if (el && el.offsetParent !== null) { el.classList.add('guide-hl'); guideEls.push(el); }
+  }
 }
 
 // --- exam mode: hide the checklist, time the flow, grade at the end ---

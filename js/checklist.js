@@ -160,23 +160,32 @@ export const PHASES = [
   },
 ];
 
-// Guide highlight targets: checklist item id -> a control to flash on the panel.
-// A value starting with '#'/'.'/'[' is a CSS selector; otherwise it matches a
-// control by its .ctl-label text. Items without an entry are simply not
-// highlighted (the checklist row still shows the action).
+// Guide highlight targets: checklist item id -> control(s) to flash on the
+// panel. A value may be a single string or an array; each entry starting with
+// '#'/'.'/'[' is a CSS selector, otherwise it matches controls by .ctl-label
+// text. Multi-control steps list every control involved so the whole group
+// lights up. Items without an entry are not highlighted (the row still shows
+// the action). Ambiguous labels (e.g. ANTI ICE WING/ENG 1/ENG 2, which also
+// exist in EXT LT / FIRE) are deliberately left unmapped.
 const GUIDE_TARGET = {
-  gpu: 'GPU', bat: 'BAT 1', extpwr: 'EXT PWR', adirs: 'IR 1',
-  navlogo: 'NAV & LOGO', strobe: 'STROBE', signs: 'SEAT BELTS',
+  gpu: 'GPU', bat: ['BAT 1', 'BAT 2'], extpwr: 'EXT PWR', adirs: ['IR 1', 'IR 2', 'IR 3'],
+  hyd: ['ENG 1 PUMP', 'PTU', 'ENG 2 PUMP'], 'elec-chk': ['GEN 1', 'GEN 2', 'APU GEN', 'BUS TIE'],
+  'pack-chk': ['PACK 1', 'PACK 2'],
+  navlogo: 'NAV & LOGO', strobe: 'STROBE', signs: ['SEAT BELTS', 'NO SMOKING'],
   'cdu-init': '#btn-cdu', 'cdu-fpln': '#btn-cdu', 'cdu-initb': '#btn-cdu', 'cdu-perf': '#btn-cdu',
-  'fcu-managed': '.fcu-cell.fcu-spd .fcu-push', 'fcu-alt': '.fcu-cell.fcu-alt', 'fcu-baro': '.fcu-cell.fcu-qnh',
-  fuel: 'L TK 1', ctr: 'CTR 1', apum: 'MASTER SW', apus: 'START', apub: 'APU BLEED',
-  'packs-on1': 'PACK 1', 'xpdr-code': 'CODE', parkbrk: 'PARK BRK', beacon: 'BEACON', 'packs-off1': 'PACK 1',
+  'fcu-managed': ['.fcu-cell.fcu-spd .fcu-push', '.fcu-cell.fcu-hdg .fcu-push'],
+  'fcu-alt': '.fcu-cell.fcu-alt', 'fcu-baro': '.fcu-cell.fcu-qnh',
+  fuel: ['L TK 1', 'L TK 2', 'R TK 1', 'R TK 2'], ctr: ['CTR 1', 'CTR 2'],
+  apum: 'MASTER SW', apus: 'START', apub: 'APU BLEED',
+  'packs-on1': ['PACK 1', 'PACK 2'], 'xpdr-code': 'CODE', parkbrk: 'PARK BRK', beacon: 'BEACON',
+  'packs-off1': ['PACK 1', 'PACK 2'],
   eng2: '[data-guide="master-2"]', eng1: '[data-guide="master-1"]',
-  apuboff: 'APU BLEED', apumoff: 'MASTER SW', 'packs-on2': 'PACK 1', extoff: 'EXT PWR',
-  splrs: 'SPD BRK', flaps: 'FLAPS', autobrk: 'MAX', tocfg: 'button.tocfg',
-  'land-on': 'LAND', 'packs-to': 'PACK 1', 'parkbrk-off': 'PARK BRK', lineup: '.nd-btns button',
+  apuboff: 'APU BLEED', apumoff: 'MASTER SW', 'packs-on2': ['PACK 1', 'PACK 2'], extoff: 'EXT PWR',
+  splrs: 'SPD BRK', flaps: 'FLAPS', autobrk: 'MAX',
+  'taxi-lt': ['NOSE', 'RWY TURN OFF'], tocfg: 'button.tocfg',
+  'land-on': 'LAND', 'packs-to': ['PACK 1', 'PACK 2'], 'parkbrk-off': 'PARK BRK', lineup: '.nd-btns button',
   'lever-to': '[data-guide="thr-FLX"]', 'gear-up': '.gear-lever', 'lever-clb': '[data-guide="thr-CLB"]',
-  flaps0: 'FLAPS', 'ap1-on': '[data-guide="ap1"]', 'packs-on3': 'PACK 1',
+  flaps0: 'FLAPS', 'ap1-on': '[data-guide="ap1"]', 'packs-on3': ['PACK 1', 'PACK 2'],
   'fcu-crz': '.fcu-cell.fcu-alt', 'skip-tod': '.nd-btns button',
   'fcu-des': '.fcu-cell.fcu-alt', 'land-chk': 'LAND',
   'appr-arm': '[data-guide="appr"]', flaps1a: 'FLAPS', flaps2a: 'FLAPS', 'gear-dn': '.gear-lever',
@@ -184,8 +193,11 @@ const GUIDE_TARGET = {
   retard: '[data-guide="thr-IDLE"]', 'rev-max': '.thr-rev', 'ap-off': '[data-guide="ap1"]',
   vacate: '.nd-btns button', 'al-flaps': 'FLAPS', 'al-splrs': 'SPD BRK', 'al-land': 'LAND',
   'sd-parkbrk': 'PARK BRK', 'sd-flaps': 'FLAPS', 'sd-splrs': 'SPD BRK', 'sd-ext': 'EXT PWR',
-  'sd-beacon': 'BEACON', 'sd-belts': 'SEAT BELTS', 'sd-fuel': 'L TK 1', 'sd-navlogo': 'NAV & LOGO',
-  'sd-bat': 'BAT 1',
+  'sd-eng': ['[data-guide="master-1"]', '[data-guide="master-2"]'],
+  'sd-taxi-lt': ['NOSE', 'RWY TURN OFF'],
+  'sd-beacon': 'BEACON', 'sd-belts': 'SEAT BELTS',
+  'sd-fuel': ['L TK 1', 'L TK 2', 'CTR 1', 'CTR 2', 'R TK 1', 'R TK 2'], 'sd-navlogo': 'NAV & LOGO',
+  'sd-bat': ['BAT 1', 'BAT 2'],
 };
 
 const ALL_ITEMS = PHASES.flatMap(p =>
