@@ -133,7 +133,9 @@ guideBtn.classList.toggle('active', guideOn);
 // actuating them. Capture phase so it runs before the widget's own handler.
 document.addEventListener('click', ev => {
   if (!helpMode) return;
-  if (ev.target.closest('#topbar') || ev.target.closest('#help-popover')) return;
+  // only cockpit panels get help; chrome/overlays (header, CDU popup,
+  // checklist drawer, exam modal, help popover) stay interactive
+  if (!ev.target.closest('main')) return;
   const info = helpFor(ev.target);
   ev.preventDefault();
   ev.stopPropagation();
