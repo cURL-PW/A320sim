@@ -15,6 +15,7 @@ export function buildPedestal(root, act) {
   }));
   add(eng.body, rotary({
     label: 'MODE',
+    guide: 'eng-mode',   // label 'MODE' is shared with the XPDR selector
     positions: ENG_MODE,
     get: () => act.state().engModeSel,
     set: v => act.do(s => { s.engModeSel = v; }),
@@ -75,7 +76,7 @@ export function buildPedestal(root, act) {
   const atc = section('ATC / XPDR');
   add(atc.body, xpdrCode(act));
   add(atc.body, toggle3({
-    label: 'MODE', positions: XPDR_MODE,
+    label: 'MODE', guide: 'xpdr-mode', positions: XPDR_MODE,
     get: () => XPDR_MODE.indexOf(act.state().xpdr.mode),
     set: v => act.do(s => { s.xpdr.mode = XPDR_MODE[v]; }),
   }));

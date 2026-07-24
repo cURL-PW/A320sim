@@ -164,12 +164,14 @@ export const PHASES = [
 // panel. A value may be a single string or an array; each entry starting with
 // '#'/'.'/'[' is a CSS selector, otherwise it matches controls by .ctl-label
 // text. Multi-control steps list every control involved so the whole group
-// lights up. Items without an entry are not highlighted (the row still shows
-// the action). Ambiguous labels (e.g. ANTI ICE WING/ENG 1/ENG 2, which also
-// exist in EXT LT / FIRE) are deliberately left unmapped.
+// lights up. Controls whose labels repeat across sections (ENG/XPDR MODE,
+// ANTI ICE vs EXT LT/FIRE) carry a data-guide attribute instead.
+// Only the passive "state reached" steps (crz, des-init) have no target.
 const GUIDE_TARGET = {
   gpu: 'GPU', bat: ['BAT 1', 'BAT 2'], extpwr: 'EXT PWR', adirs: ['IR 1', 'IR 2', 'IR 3'],
   hyd: ['ENG 1 PUMP', 'PTU', 'ENG 2 PUMP'], 'elec-chk': ['GEN 1', 'GEN 2', 'APU GEN', 'BUS TIE'],
+  'fire-chk': ['[data-guide="fire-eng1"]', '[data-guide="fire-apu"]', '[data-guide="fire-eng2"]'],
+  antiice: ['[data-guide="ai-wing"]', '[data-guide="ai-eng1"]', '[data-guide="ai-eng2"]'],
   'pack-chk': ['PACK 1', 'PACK 2'],
   navlogo: 'NAV & LOGO', strobe: 'STROBE', signs: ['SEAT BELTS', 'NO SMOKING'],
   'cdu-init': '#btn-cdu', 'cdu-fpln': '#btn-cdu', 'cdu-initb': '#btn-cdu', 'cdu-perf': '#btn-cdu',
@@ -177,28 +179,37 @@ const GUIDE_TARGET = {
   'fcu-alt': '.fcu-cell.fcu-alt', 'fcu-baro': '.fcu-cell.fcu-qnh',
   fuel: ['L TK 1', 'L TK 2', 'R TK 1', 'R TK 2'], ctr: ['CTR 1', 'CTR 2'],
   apum: 'MASTER SW', apus: 'START', apub: 'APU BLEED',
-  'packs-on1': ['PACK 1', 'PACK 2'], 'xpdr-code': 'CODE', parkbrk: 'PARK BRK', beacon: 'BEACON',
-  'packs-off1': ['PACK 1', 'PACK 2'],
+  'packs-on1': ['PACK 1', 'PACK 2'], 'xpdr-code': 'CODE', 'xpdr-mode': '[data-guide="xpdr-mode"]',
+  parkbrk: 'PARK BRK', beacon: 'BEACON', 'packs-off1': ['PACK 1', 'PACK 2'],
+  mode: '[data-guide="eng-mode"]', modenorm: '[data-guide="eng-mode"]',
   eng2: '[data-guide="master-2"]', eng1: '[data-guide="master-1"]',
   apuboff: 'APU BLEED', apumoff: 'MASTER SW', 'packs-on2': ['PACK 1', 'PACK 2'], extoff: 'EXT PWR',
-  splrs: 'SPD BRK', flaps: 'FLAPS', autobrk: 'MAX',
+  splrs: 'SPD BRK', flaps: 'FLAPS', fctl: '.fctl-btn', autobrk: 'MAX',
   'taxi-lt': ['NOSE', 'RWY TURN OFF'], tocfg: 'button.tocfg',
+  'xpdr-tara': '[data-guide="xpdr-mode"]',
   'land-on': 'LAND', 'packs-to': ['PACK 1', 'PACK 2'], 'parkbrk-off': 'PARK BRK', lineup: '.nd-btns button',
   'lever-to': '[data-guide="thr-FLX"]', 'gear-up': '.gear-lever', 'lever-clb': '[data-guide="thr-CLB"]',
   flaps0: 'FLAPS', 'ap1-on': '[data-guide="ap1"]', 'packs-on3': ['PACK 1', 'PACK 2'],
   'fcu-crz': '.fcu-cell.fcu-alt', 'skip-tod': '.nd-btns button',
-  'fcu-des': '.fcu-cell.fcu-alt', 'land-chk': 'LAND',
+  'fcu-des': '.fcu-cell.fcu-alt', 'belts-chk': 'SEAT BELTS', 'land-chk': 'LAND',
   'appr-arm': '[data-guide="appr"]', flaps1a: 'FLAPS', flaps2a: 'FLAPS', 'gear-dn': '.gear-lever',
   flaps3a: 'FLAPS', flapsfa: 'FLAPS', 'abrk-med': 'MED',
-  retard: '[data-guide="thr-IDLE"]', 'rev-max': '.thr-rev', 'ap-off': '[data-guide="ap1"]',
+  retard: '[data-guide="thr-IDLE"]', 'rev-max': '.thr-rev', 'rev-idle': '.thr-rev',
+  'ap-off': '[data-guide="ap1"]',
   vacate: '.nd-btns button', 'al-flaps': 'FLAPS', 'al-splrs': 'SPD BRK', 'al-land': 'LAND',
-  'sd-parkbrk': 'PARK BRK', 'sd-flaps': 'FLAPS', 'sd-splrs': 'SPD BRK', 'sd-ext': 'EXT PWR',
+  'al-xpdr': '[data-guide="xpdr-mode"]',
+  'sd-parkbrk': 'PARK BRK', 'sd-flaps': 'FLAPS', 'sd-splrs': 'SPD BRK',
+  'sd-autobrk': ['LO', 'MED', 'MAX'], 'sd-ext': 'EXT PWR',
   'sd-eng': ['[data-guide="master-1"]', '[data-guide="master-2"]'],
   'sd-taxi-lt': ['NOSE', 'RWY TURN OFF'],
-  'sd-beacon': 'BEACON', 'sd-belts': 'SEAT BELTS',
-  'sd-fuel': ['L TK 1', 'L TK 2', 'CTR 1', 'CTR 2', 'R TK 1', 'R TK 2'], 'sd-navlogo': 'NAV & LOGO',
+  'sd-beacon': 'BEACON', 'sd-belts': 'SEAT BELTS', 'sd-packs': ['PACK 1', 'PACK 2'],
+  'sd-fuel': ['L TK 1', 'L TK 2', 'CTR 1', 'CTR 2', 'R TK 1', 'R TK 2'],
+  'sd-adirs': ['IR 1', 'IR 2', 'IR 3'], 'sd-navlogo': 'NAV & LOGO', 'sd-extoff': 'EXT PWR',
   'sd-bat': ['BAT 1', 'BAT 2'],
 };
+
+// Steps that are passive (wait for a state, nothing to press) — no highlight.
+const NO_GUIDE_OK = new Set(['crz', 'des-init']);
 
 const ALL_ITEMS = PHASES.flatMap(p =>
   p.items.map(it => ({ ...it, phase: p.id, full: p.full || it.full, target: GUIDE_TARGET[it.id] || null })));
@@ -230,6 +241,11 @@ export function currentPhase(s) {
   const it = activeItem(s);
   if (!it) return null;
   return PHASES.find(p => p.id === it.phase);
+}
+
+// Actionable steps missing a guide target (should stay empty; used by tests).
+export function itemsWithoutGuide() {
+  return ALL_ITEMS.filter(it => !it.target && !NO_GUIDE_OK.has(it.id)).map(it => it.id);
 }
 
 export function progress(s) {

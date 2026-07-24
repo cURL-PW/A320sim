@@ -142,9 +142,9 @@ export function buildOverhead(root, act) {
 
   // --- FIRE (verify-only: guarded pushbuttons, normally dark) ---
   const fire = section('FIRE');
-  for (const label of ['ENG 1', 'APU', 'ENG 2']) {
+  for (const [gkey, label] of [['fire-eng1', 'ENG 1'], ['fire-apu', 'APU'], ['fire-eng2', 'ENG 2']]) {
     add(fire.body, korry({
-      label, top: 'FIRE', bottom: '', topColor: 'red',
+      label, guide: gkey, top: 'FIRE', bottom: '', topColor: 'red',
       onPress: () => {},   // guarded — no action in this trainer
     }));
   }
@@ -195,7 +195,7 @@ export function buildOverhead(root, act) {
   const ai = section('ANTI ICE');
   for (const [key, label] of [['wing', 'WING'], ['eng1', 'ENG 1'], ['eng2', 'ENG 2']]) {
     add(ai.body, korry({
-      label, top: 'FAULT', bottom: 'ON', botColor: 'blue',
+      label, guide: 'ai-' + key, top: 'FAULT', bottom: 'ON', botColor: 'blue',
       botLit: s => s.antiIce[key],
       onPress: () => act.do(s => { s.antiIce[key] = !s.antiIce[key]; }),
     }));

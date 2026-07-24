@@ -10,8 +10,9 @@ function div(cls, parent) {
 // Korry push button: two light halves (top / bottom) + caption below.
 // topLit/botLit are (state, derived) => bool; lights only work with DC power.
 export function korry({ label, top = '', bottom = '', topColor = 'amber', botColor = 'blue',
-                        topLit, botLit, onPress }) {
+                        topLit, botLit, onPress, guide }) {
   const wrap = div('ctl');
+  if (guide) wrap.dataset.guide = guide;
   const btn = document.createElement('button');
   btn.className = 'korry';
   btn.type = 'button';
@@ -32,8 +33,9 @@ export function korry({ label, top = '', bottom = '', topColor = 'amber', botCol
 }
 
 // Rotary selector. Tap left half = CCW, right half = CW.
-export function rotary({ label, positions, get, set }) {
+export function rotary({ label, positions, get, set, guide }) {
   const wrap = div('ctl');
+  if (guide) wrap.dataset.guide = guide;
   const posRow = div('rot-positions', wrap);
   const posEls = positions.map(p => {
     const e = document.createElement('span');
@@ -64,8 +66,9 @@ export function rotary({ label, positions, get, set }) {
 }
 
 // Two-position toggle switch (external lights, signs).
-export function toggle({ label, get, set, onText = 'ON', offText = 'OFF' }) {
+export function toggle({ label, get, set, onText = 'ON', offText = 'OFF', guide }) {
   const wrap = div('ctl');
+  if (guide) wrap.dataset.guide = guide;
   const btn = document.createElement('button');
   btn.className = 'toggle'; btn.type = 'button';
   const lever = div('tg-lever', btn);
@@ -86,8 +89,9 @@ export function toggle({ label, get, set, onText = 'ON', offText = 'OFF' }) {
 
 // Three-position switch (e.g. STROBE OFF/AUTO/ON, XPDR mode).
 // positions are listed bottom-to-top; tap the upper/lower half to move the lever.
-export function toggle3({ label, positions, get, set }) {
+export function toggle3({ label, positions, get, set, guide }) {
   const wrap = div('ctl');
+  if (guide) wrap.dataset.guide = guide;
   const posCol = div('t3-positions', wrap);
   const posEls = [...positions].reverse().map(p => {
     const e = document.createElement('span');
